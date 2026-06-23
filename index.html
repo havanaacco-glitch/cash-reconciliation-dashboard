@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>التسوية النقدية — CEO Executive Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" onerror="window._chartFail=true"></script>
+<style>
+:root{
+  --bg:#07090e;--panel:#0f1620;--panel2:#141c2a;--border:#1d2d40;
+  --text:#e6eef5;--muted:#6d82a0;
+  --gold:#d4a820;--gold2:#f0c84a;--gold-bg:rgba(212,168,32,.1);
+  --green:#10b981;--grn-bg:rgba(16,185,129,.1);--grn-bdr:rgba(16,185,129,.3);
+  --red:#ef4444;--red-bg:rgba(239,68,68,.1);--red-bdr:rgba(239,68,68,.3);
+  --blue:#3b82f6;--blu-bg:rgba(59,130,246,.1);--blu-bdr:rgba(59,130,246,.3);
+  --orange:#f59e0b;--org-bg:rgba(245,158,11,.1);--org-bdr:rgba(245,158,11,.3);
+  --teal:#06b6d4;--tel-bg:rgba(6,182,212,.1);
+  --purple:#8b5cf6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Cairo',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl}
+a{color:inherit;text-decoration:none}
+.hidden{display:none!important}
+
+/* ═══ STICKY HEADER ═══ */
+.sticky-hdr{
+  position:sticky;top:0;z-index:200;
+  background:rgba(7,9,14,.97);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+  padding:11px 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  box-shadow:0 4px 28px rgba(0,0,0,.55);
+}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,#065f46,#10b981);
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.brand h1{font-size:15px;font-weight:900;color:var(--gold2)}
+.brand .sub{font-size:10px;color:var(--muted);margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:#555;animation:pulse 2s infinite}
+.conn-dot.ok{background:var(--green)}
+.conn-dot.err{background:var(--red);animation:none}
+.conn-txt{font-size:10px;color:var(--muted)}
+.btn{font-family:inherit;border-radius:9px;padding:7px 14px;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;border:1px solid}
+.btn-refresh{border-color:#1a4a2a;background:#0a2418;color:#6effa8}
+.btn-refresh:hover{background:#0f3320}
+.btn-copy{border-color:#1a3a5a;background:#091d30;color:#6ec8ff}
+.btn-copy:hover{background:#0e2840}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+
+/* ═══ STICKY NAV ═══ */
+.sticky-nav{
+  position:sticky;top:64px;z-index:190;
+  background:rgba(7,9,14,.96);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;
+}
+.sticky-nav::-webkit-scrollbar{display:none}
+.nav-a{font-size:11px;font-weight:700;padding:9px 14px;color:var(--muted);white-space:nowrap;
+  border-bottom:2px solid transparent;cursor:pointer;transition:all .2s}
+.nav-a:hover,.nav-a.on{color:var(--gold2);border-bottom-color:var(--gold)}
+
+/* ═══ MAIN ═══ */
+main{max-width:1380px;margin:auto;padding:18px 24px;position:relative;z-index:1}
+
+/* ═══ MONTH / DAY TABS ═══ */
+.month-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.day-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.mtab{border:1px solid #252c36;background:#0d1420;color:#8899aa;border-radius:10px;padding:8px 18px;
+  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;position:relative}
+.mtab:hover{border-color:#2a3d52;color:var(--text)}
+/* Active: selected month — high contrast green */
+.mtab.active{background:#16a34a;color:#ecfdf5;border-color:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.3)}
+/* Current month (today) when NOT selected */
+.mtab.current-month:not(.active){border:2px solid rgba(34,197,94,.5);color:#4ade80}
+.mtab.live:not(.current-month){border-color:var(--green);color:var(--green)}
+.badge-new{
+  display:inline-block;background:#16a34a;color:#ecfdf5;
+  border-radius:4px;font-size:9px;padding:1px 5px;
+  margin-left:5px;font-weight:900;vertical-align:middle;
+  animation:pulse 2s infinite;
+}
+/* Period filter bar */
+.period-bar{
+  background:linear-gradient(135deg,rgba(59,130,246,.08),var(--panel));
+  border:1px solid rgba(59,130,246,.3);border-radius:12px;
+  padding:10px 16px;margin-bottom:12px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.period-lbl{font-size:11px;color:#88ccff;font-weight:700;white-space:nowrap}
+.period-sel{font-family:inherit;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);
+  color:var(--text);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;min-width:130px}
+.period-sel option{background:var(--panel2)}
+.btn-period-apply{font-family:inherit;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);
+  color:#88ccff;border-radius:8px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;transition:background .2s}
+.btn-period-apply:hover{background:rgba(59,130,246,.25)}
+.btn-period-reset{font-family:inherit;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);
+  color:var(--red);border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer}
+.period-err{font-size:11px;color:var(--red);font-weight:700;display:none}
+/* Period mode active banner */
+.period-mode-banner{
+  background:linear-gradient(135deg,rgba(59,130,246,.12),rgba(59,130,246,.04));
+  border:1px solid rgba(59,130,246,.35);border-radius:11px;
+  padding:10px 16px;margin-bottom:14px;
+  display:flex;align-items:center;gap:10px;font-size:12px;
+}
+.period-mode-banner strong{color:#88ccff}
+.chip-period{background:rgba(59,130,246,.15);color:#88ccff;border:1px solid rgba(59,130,246,.3);
+  border-radius:7px;font-size:10px;font-weight:700;padding:3px 9px;display:inline-flex;align-items:center;gap:4px}
+/* Toast */
+.toast-container{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:#1e3a5f;border:1px solid rgba(59,130,246,.4);border-radius:10px;
+  padding:10px 16px;font-size:12px;font-weight:700;color:#88ccff;
+  box-shadow:0 8px 20px rgba(0,0,0,.4);animation:slideIn .3s ease;max-width:320px}
+.toast.ok{background:#0d2e1a;border-color:rgba(16,185,129,.4);color:#6effa0}
+.toast.err{background:#3d1010;border-color:rgba(239,68,68,.4);color:#ff8888}
+@keyframes slideIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.dtab-disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.dtab{border:1px solid #1e2d40;background:#0c1520;color:#8899aa;border-radius:8px;padding:6px 12px;
+  font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.dtab:hover{color:var(--text)}
+.dtab.active{background:var(--gold);color:#07090e;border-color:var(--gold)}
+
+/* ═══ FILTER BAR ═══ */
+.filter-bar{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:10px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.filter-lbl{font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap}
+.filter-sel{font-family:inherit;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);
+  color:var(--text);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer}
+.filter-sel option{background:var(--panel2)}
+.filter-reset{font-family:inherit;background:var(--red-bg);border:1px solid var(--red-bdr);
+  color:var(--red);border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;
+  cursor:pointer;margin-right:auto}
+
+/* ═══ SECTION TITLE ═══ */
+.sec-ttl{
+  font-size:11px;font-weight:900;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;
+  margin:22px 0 12px;display:flex;gap:8px;align-items:center;
+}
+.sec-ttl::after{content:'';height:1px;flex:1;background:linear-gradient(90deg,var(--gold-bg),transparent)}
+
+/* ═══ CARD ═══ */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px}
+
+/* ═══ EXEC SUMMARY ═══ */
+.exec-card{
+  padding:20px 24px;margin-bottom:18px;
+  background:linear-gradient(135deg,var(--gold-bg),var(--panel));
+  border-color:rgba(212,168,32,.3);position:relative;overflow:hidden;
+}
+.exec-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.exec-lbl{font-size:10px;color:var(--gold);font-weight:900;letter-spacing:1.4px;text-transform:uppercase}
+.exec-text{font-size:15px;line-height:1.8;font-weight:700;margin-top:8px;color:var(--text)}
+.exec-action{margin-top:12px;padding:10px 14px;background:var(--red-bg);border:1px solid var(--red-bdr);
+  border-radius:9px;font-size:12px;font-weight:700;color:#ff8080}
+.exec-action.ok{background:var(--grn-bg);border-color:var(--grn-bdr);color:#7effc0}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.chip{font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;border:1px solid}
+.chip.ok{background:var(--grn-bg);color:#6effa0;border-color:var(--grn-bdr)}
+.chip.bad{background:var(--red-bg);color:#ff8888;border-color:var(--red-bdr)}
+.chip.warn{background:var(--org-bg);color:#ffd080;border-color:var(--org-bdr)}
+.chip.info{background:var(--blu-bg);color:#88ccff;border-color:var(--blu-bdr)}
+.chip.gold{background:var(--gold-bg);color:var(--gold2);border-color:rgba(212,168,32,.3)}
+
+/* ═══ KPI GRID ═══ */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.kpi{padding:16px 18px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.3)}
+.kpi::before{content:'';position:absolute;top:0;right:0;width:60px;height:60px;
+  border-radius:0 14px 0 60px;opacity:.08}
+.kpi.c-grn::before{background:var(--green)}
+.kpi.c-red::before{background:var(--red)}
+.kpi.c-blu::before{background:var(--blue)}
+.kpi.c-gld::before{background:var(--gold)}
+.kpi.c-org::before{background:var(--orange)}
+.kpi.c-tel::before{background:var(--teal)}
+.kpi-icon{font-size:16px;margin-bottom:5px}
+.kpi-lbl{font-size:10px;color:var(--muted);font-weight:700;margin-bottom:3px}
+.kpi-val{font-size:22px;font-weight:900;line-height:1;margin-bottom:3px}
+.kpi-val.big{font-size:28px}
+.kpi-hint{font-size:10px;color:var(--muted)}
+.kpi-val.grn{color:var(--green)} .kpi-val.red{color:var(--red)}
+.kpi-val.blu{color:var(--blue)} .kpi-val.gld{color:var(--gold2)}
+.kpi-val.org{color:var(--orange)} .kpi-val.tel{color:var(--teal)}
+
+/* ═══ RISK BANNER ═══ */
+.risk-banner{border-radius:12px;padding:12px 18px;margin-bottom:18px;
+  display:flex;align-items:center;gap:12px;font-weight:700}
+.risk-banner.normal{background:var(--grn-bg);border:1px solid var(--grn-bdr)}
+.risk-banner.watch{background:var(--org-bg);border:1px solid var(--org-bdr)}
+.risk-banner.high{background:var(--red-bg);border:1px solid var(--red-bdr)}
+.risk-banner.critical{background:rgba(239,68,68,.18);border:2px solid var(--red)}
+.risk-icon{font-size:22px;flex-shrink:0}
+.risk-title{font-size:14px} .risk-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ═══ CHARTS ═══ */
+.chart-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px}
+.chart-card{padding:16px 18px}
+.chart-card canvas{max-height:220px}
+.chart-ph{min-height:180px;display:flex;align-items:center;justify-content:center;
+  color:var(--muted);font-size:12px;flex-direction:column;gap:8px}
+.chart-ph span{font-size:28px}
+
+/* ═══ TABLES ═══ */
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:rgba(255,255,255,.03);color:var(--muted);font-weight:700;
+  padding:9px 10px;text-align:right;border-bottom:1px solid rgba(255,255,255,.06);font-size:11px}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.03);transition:background .15s}
+tbody tr:hover{background:rgba(255,255,255,.025)}
+td{padding:9px 10px;vertical-align:middle}
+.tbl-card{padding:0;overflow:hidden}
+.tbl-card table{margin:0}
+
+/* ═══ BADGES ═══ */
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;
+  padding:3px 8px;border-radius:7px;white-space:nowrap;border:1px solid}
+.b-grn{background:var(--grn-bg);color:#6effa0;border-color:var(--grn-bdr)}
+.b-red{background:var(--red-bg);color:#ff8888;border-color:var(--red-bdr)}
+.b-blu{background:var(--blu-bg);color:#88ccff;border-color:var(--blu-bdr)}
+.b-org{background:var(--org-bg);color:#ffd080;border-color:var(--org-bdr)}
+.b-gld{background:var(--gold-bg);color:var(--gold2);border-color:rgba(212,168,32,.3)}
+
+/* ═══ BRANCH CARDS ═══ */
+.branch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:18px}
+.br-card{padding:14px 16px;border-radius:13px;border:1px solid var(--border);
+  background:var(--panel);transition:transform .2s,border-color .2s}
+.br-card:hover{transform:translateY(-2px)}
+.br-card.ok{border-color:rgba(16,185,129,.3)}
+.br-card.deficit{border-color:rgba(239,68,68,.3)}
+.br-card.surplus{border-color:rgba(59,130,246,.3)}
+.br-name{font-size:13px;font-weight:800;margin-bottom:6px}
+.br-diff{font-size:20px;font-weight:900;margin-bottom:3px}
+.br-type{font-size:10px;color:var(--muted)}
+.br-detail{font-size:10px;color:var(--muted);margin-top:6px;border-top:1px solid rgba(255,255,255,.05);padding-top:6px}
+
+/* ═══ ACTION PLAN ═══ */
+.action-card{padding:18px 20px}
+.pri-dot{width:24px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900}
+.p1{background:rgba(239,68,68,.15);color:#ff8888;border:1px solid var(--red-bdr)}
+.p2{background:var(--org-bg);color:#ffd080;border:1px solid var(--org-bdr)}
+.p3{background:var(--gld,var(--gold-bg));color:var(--gold2);border:1px solid rgba(212,168,32,.3)}
+.p4{background:var(--blu-bg);color:#88ccff;border:1px solid var(--blu-bdr)}
+.p5{background:var(--grn-bg);color:#6effa0;border:1px solid var(--grn-bdr)}
+
+/* ═══ DATA QUALITY ═══ */
+.dq-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:18px}
+.dq-item{padding:13px 15px;border-radius:11px;border:1px solid var(--border);background:var(--panel)}
+.dq-item.issue{border-color:var(--red-bdr);background:var(--red-bg)}
+.dq-item.ok{border-color:var(--grn-bdr);background:var(--grn-bg)}
+.dq-count{font-size:22px;font-weight:900;margin:4px 0}
+.dq-count.issue{color:var(--red)} .dq-count.ok{color:var(--green)}
+.dq-lbl{font-size:10px;color:var(--muted);font-weight:700}
+.dq-fix{font-size:10px;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.05)}
+
+/* ═══ WHATSAPP ═══ */
+.wa-tabs{display:flex;gap:6px;margin-bottom:12px}
+.wa-tab{font-family:inherit;font-size:11px;font-weight:700;padding:6px 14px;border-radius:8px;
+  border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:var(--muted);cursor:pointer}
+.wa-tab.active{background:rgba(16,185,129,.15);color:var(--green);border-color:var(--grn-bdr)}
+.wa-pane{display:none}.wa-pane.active{display:block}
+.wa-card{background:#04130a;border:1px solid #14532d;border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.wa-txt{white-space:pre-wrap;font-family:'Cairo',Tahoma;font-size:13px;line-height:1.85;
+  color:#c8f5dc;max-height:320px;overflow:auto}
+.wa-copy{width:100%;margin-top:10px;background:var(--green);color:#031a0f;border:0;
+  border-radius:10px;padding:11px;font-weight:900;font-size:14px;cursor:pointer;font-family:inherit}
+
+/* ═══ TREND ═══ */
+.trend-card{padding:18px 20px}
+.trend-ph{text-align:center;padding:24px;color:var(--muted)}
+.trend-ph .t-icon{font-size:32px;margin-bottom:8px}
+.trend-ph p{font-size:12px;line-height:1.6}
+.t-up{color:var(--green)} .t-dn{color:var(--red)} .t-eq{color:var(--muted)}
+.trend-row{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+
+/* ═══ VARIANCE ═══ */
+.var-row{display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,.04)}
+.var-bar{flex:1;height:24px;background:rgba(255,255,255,.04);border-radius:6px;overflow:hidden}
+.var-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-right:8px;min-width:50px}
+.var-fill span{font-size:11px;font-weight:700;color:#07090e;white-space:nowrap}
+
+/* ═══ LOADING / ERROR ═══ */
+.loading-box{min-height:60vh;display:flex;align-items:center;justify-content:center;text-align:center}
+.loading-inner{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:40px 32px}
+.spinner{width:36px;height:36px;border:3px solid rgba(212,168,32,.2);border-top:3px solid var(--gold);
+  border-radius:50%;animation:spin 1s linear infinite;margin:12px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══ FOOTER ═══ */
+footer{text-align:center;color:var(--muted);font-size:10px;padding:16px;margin-top:4px}
+
+/* ═══ RESPONSIVE ═══ */
+
+/* ═══ ENHANCED TREND ═══ */
+.trend-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.trend-kpi{background:var(--panel2);border:1px solid var(--border);border-radius:11px;padding:12px 14px}
+.trend-kpi.improved{border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.06)}
+.trend-kpi.worsened{border-color:rgba(239,68,68,.35);background:rgba(239,68,68,.06)}
+.trend-kpi.stable{border-color:rgba(255,255,255,.08)}
+.t-kpi-lbl{font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px}
+.t-kpi-val{font-size:20px;font-weight:900;line-height:1}
+.t-kpi-sub{font-size:10px;color:var(--muted);margin-top:4px}
+.t-kpi-val.improved{color:var(--green)} .t-kpi-val.worsened{color:var(--red)} .t-kpi-val.stable{color:var(--muted)}
+.trend-cmp-hdr{display:grid;grid-template-columns:130px 90px 90px 90px 80px 80px 1fr;gap:4px;
+  font-size:10px;color:var(--muted);font-weight:700;padding:7px 10px;
+  background:rgba(255,255,255,.03);border-radius:8px 8px 0 0;border-bottom:1px solid var(--border)}
+.trend-cmp-row{display:grid;grid-template-columns:130px 90px 90px 90px 80px 80px 1fr;gap:4px;
+  font-size:12px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.03);align-items:center;transition:background .15s}
+.trend-cmp-row:hover{background:rgba(255,255,255,.025)}
+.trend-cmp-row:last-child{border-bottom:none}
+.tcr-name{font-weight:700}
+.tcr-improved{color:var(--green)} .tcr-worsened{color:var(--red)} .tcr-stable{color:var(--muted)}
+.tcr-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;border:1px solid;white-space:nowrap}
+.tcr-badge.matched{background:var(--grn-bg);color:#6effa0;border-color:var(--grn-bdr)}
+.tcr-badge.deficit{background:var(--red-bg);color:#ff8888;border-color:var(--red-bdr)}
+.tcr-badge.surplus{background:var(--blu-bg);color:#88ccff;border-color:var(--blu-bdr)}
+.tcr-badge.nodata{background:var(--gold-bg);color:var(--gold2);border-color:rgba(212,168,32,.3)}
+.top-row{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.top-card{flex:1;min-width:220px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.top-card.improved{border-color:rgba(16,185,129,.3)}
+.top-card.worsened{border-color:rgba(239,68,68,.3)}
+.top-card-lbl{font-size:10px;color:var(--muted);font-weight:700;margin-bottom:6px}
+.top-card-item{display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px}
+.top-card-item:last-child{border-bottom:none}
+.mtd-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.mtd-card{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;text-align:center}
+.mtd-val{font-size:18px;font-weight:900;margin:4px 0}
+.mtd-lbl{font-size:10px;color:var(--muted);font-weight:700}
+.trend-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+@media(max-width:900px){
+  .trend-kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .trend-cmp-hdr,.trend-cmp-row{grid-template-columns:120px 80px 80px 80px 70px 1fr}
+  .mtd-grid{grid-template-columns:repeat(3,1fr)}
+  .trend-chart-grid{grid-template-columns:1fr}
+}
+
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.chart-grid{grid-template-columns:1fr}.branch-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:680px){main{padding:12px 14px}.kpi-grid{grid-template-columns:repeat(2,1fr)}.branch-grid{grid-template-columns:1fr}.dq-grid{grid-template-columns:1fr}.sticky-hdr{flex-wrap:wrap;padding:10px 14px}.sticky-hdr h1{font-size:13px}}
+</style>
+</head>
+<body>
+
+<!-- STICKY HEADER -->
+<header class="sticky-hdr">
+  <div class="brand">
+    <div class="logo">📊</div>
+    <div>
+      <h1>التسوية النقدية — CEO Executive Dashboard</h1>
+      <div class="sub">هافانا للأقمشة | متصل بـ Google Sheets</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="conn-dot" id="connDot"></div>
+      <span class="conn-txt" id="connTxt">جاري الاتصال...</span>
+    </div>
+    <button class="btn btn-refresh" onclick="loadData()">🔄 تحديث</button>
+    <button class="btn btn-copy" onclick="copyCEOReport()">📋 تقرير CEO</button>
+  </div>
+</header>
+
+<!-- STICKY NAV -->
+<nav class="sticky-nav">
+  <span class="nav-a" onclick="goTo('sec-exec')">📋 الخلاصة</span>
+  <span class="nav-a" onclick="goTo('sec-kpis')">📊 KPIs</span>
+  <span class="nav-a" onclick="goTo('sec-branches')">🏢 الفروع</span>
+  <span class="nav-a" onclick="goTo('sec-variance')">⚖️ الفروقات</span>
+  <span class="nav-a" onclick="goTo('sec-trend')">📈 Trend</span>
+  <span class="nav-a" onclick="goTo('sec-action')">🎯 الإجراءات</span>
+  <span class="nav-a" onclick="goTo('sec-dq')">🔍 جودة البيانات</span>
+  <span class="nav-a" onclick="goTo('sec-wa')">💬 واتساب</span>
+</nav>
+
+<main>
+  <!-- Loading state -->
+  <div id="loadingBox" class="loading-box">
+    <div class="loading-inner">
+      <div style="font-size:32px">📊</div>
+      <div class="spinner"></div>
+      <div style="font-size:15px;font-weight:800;color:var(--gold2);margin-top:8px">جاري تحميل البيانات</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:5px">الاتصال بـ Google Sheets...</div>
+    </div>
+  </div>
+
+  <!-- Main app (hidden until data loads) -->
+  <div id="app" class="hidden">
+    <div id="monthTabs" class="month-tabs"></div>
+    <div id="dayTabs" class="day-tabs"></div>
+
+    <!-- Filter Bar (Branch / Status / Risk) -->
+    <div class="filter-bar">
+      <span class="filter-lbl">🔽 فلترة:</span>
+      <select class="filter-sel" id="fBranch" onchange="applyFilter()">
+        <option value="all">كل الفروع</option>
+      </select>
+      <select class="filter-sel" id="fStatus" onchange="applyFilter()">
+        <option value="all">كل الحالات</option>
+        <option value="matched">✅ مطابق</option>
+        <option value="deficit">🔴 عجز</option>
+        <option value="surplus">🔵 فائض</option>
+        <option value="nodata">⚪ بدون بيانات</option>
+      </select>
+      <select class="filter-sel" id="fRisk" onchange="applyFilter()">
+        <option value="all">كل مستويات الخطر</option>
+        <option value="Normal">🟢 Normal</option>
+        <option value="Low">🟡 Low</option>
+        <option value="Medium">🟠 Medium</option>
+        <option value="High">🔴 High</option>
+        <option value="Critical">🚨 Critical</option>
+      </select>
+      <button class="filter-reset" onclick="resetFilter()">✕ إعادة ضبط</button>
+    </div>
+
+    <!-- Period Filter Bar -->
+    <div class="period-bar">
+      <span class="period-lbl">📅 فترة:</span>
+      <span class="period-lbl" style="font-weight:400;color:var(--muted)">من:</span>
+      <select class="period-sel" id="pFrom"><option value="">-- اختر شهر البداية --</option></select>
+      <span class="period-lbl" style="font-weight:400;color:var(--muted)">إلى:</span>
+      <select class="period-sel" id="pTo"><option value="">-- اختر شهر النهاية --</option></select>
+      <button class="btn-period-apply" onclick="applyPeriodFilter()">✅ تطبيق الفترة</button>
+      <button class="btn-period-reset" onclick="clearPeriodMode()">✕ إلغاء الفترة</button>
+      <span class="period-err" id="periodErr">⚠️ تاريخ البداية يجب أن يكون قبل تاريخ النهاية</span>
+    </div>
+
+    <!-- Sections (filled by render()) -->
+    <div id="sec-exec"></div>
+    <div id="sec-kpis"></div>
+    <div id="riskBanner"></div>
+    <div id="sec-charts"></div>
+    <div id="sec-branches"></div>
+    <div id="sec-variance"></div>
+    <div id="sec-trend"></div>
+    <div id="sec-action"></div>
+    <div id="sec-dq"></div>
+    <div id="sec-wa"></div>
+  </div>
+</main>
+
+<footer>Havana Textiles | Cash Reconciliation CEO Dashboard | تحديث تلقائي كل 5 دقائق</footer>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   CONFIG — preserved from V1 + new thresholds
+═══════════════════════════════════════════════════════════ */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxC9fPmuWHsbB9630kSY34gDtlqkqngAR5IqQ2lO9xUohoY7iGCjigVsy563Ka5pf27/exec';
+const AUTO_REFRESH_MS = 5 * 60 * 1000;
+
+const BRANCH_SHEETS = [
+  {sheet:'المحجر',       full:'هافانا المحجر'},
+  {sheet:'الستين',       full:'هافانا الستين'},
+  {sheet:'النموذجية',    full:'هافانا النموذجية'},
+  {sheet:'خميس مشيط',   full:'هافانا خميس مشيط'},
+  {sheet:'جيزان',        full:'هافانا جيزان'},
+  {sheet:'الرياض البطحاء',full:'هافانا الرياض البطحاء'},
+  {sheet:'القصيم',       full:'هافانا القصيم'}
+];
+
+const MONTH_AR = {
+  '01':'يناير','02':'فبراير','03':'مارس','04':'أبريل','05':'مايو','06':'يونيو',
+  '07':'يوليو','08':'أغسطس','09':'سبتمبر','10':'أكتوبر','11':'نوفمبر','12':'ديسمبر'
+};
+
+// ── Risk thresholds (easy to adjust) ──────────────────────────────
+const T = {
+  NORMAL_DIFF:    1,      // صافي فرق أقل من ريال = Normal
+  WATCH_BRANCHES: 2,      // فروع بها فروقات <= 2  = Watch
+  WATCH_AMOUNT:   500,    // فرق أقل من 500 ريال  = Watch
+  HIGH_BRANCHES:  3,      // فروع >= 3            = High
+  HIGH_AMOUNT:    2000,   // فرق >= 2000 ريال     = High
+  CRITICAL_AMOUNT:5000,   // فرق >= 5000 ريال     = Critical
+  CRITICAL_SINGLE:3000,   // فرق فرع واحد >= 3000 = Critical
+  BR_LOW:         0.001,  // < 0.1% = Low
+  BR_MEDIUM:      0.005,  // < 0.5% = Medium
+  BR_HIGH:        0.01,   // < 1.0% = High  else Critical
+};
+
+/* ═══ STATE ═══ */
+let appData = null, selectedMonth = null, selectedDay = null, autoTimer = null;
+let filterState = {branch:'all', status:'all', risk:'all'};
+let charts = {};
+let periodFrom = null, periodTo = null;  // Period Mode state
+
+/* ═══ HELPERS — PRESERVED FROM V1 ═══ */
+function parseNum(v) {
+  if (v == null || v === '') return 0;
+  if (typeof v === 'number') return v;
+  const s = String(v).replace(/[,،\s]/g,'')
+    .replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632)
+    .replace(/[^\d.-]/g,'');
+  return parseFloat(s) || 0;
+}
+function fmt(n)   { return (Number(n)||0).toLocaleString('ar-EG',{maximumFractionDigits:2}); }
+function money(n, sign=false) {
+  n = Number(n)||0;
+  const abs = Math.abs(n).toLocaleString('ar-EG',{maximumFractionDigits:2});
+  return (sign ? (n>0?'+':n<0?'-':'') : '') + abs + ' ر.س';
+}
+function pct(n) { return Math.abs(n).toFixed(1) + '%'; }
+function cleanBranch(n) { return String(n||'').replace('هافانا ','').trim(); }
+function monthKeyFromStr(v) {
+  if (!v) return null;
+  const s = String(v).trim();
+  if (/^\d{4}-\d{2}$/.test(s)) return s;
+  let m = s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return `${m[3]}-${String(m[1]).padStart(2,'0')}`;
+  return null;
+}
+function dateKeyFromStr(v) {
+  if (!v) return null;
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+  if (m) return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return `${m[3]}-${String(m[1]).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}`;
+  return null;
+}
+function keyToAr(key)  { const [y,m] = key.split('-'); return `${MONTH_AR[m]||m} ${y}`; }
+function dateToAr(key) {
+  if (!key) return '—';
+  const [y,m,d] = key.split('-');
+  return `${Number(d)}/${Number(m)}/${y}`;
+}
+
+/* ═══ DATA LOADING — PRESERVED FROM V1 ═══ */
+async function loadData() {
+  const dot = document.getElementById('connDot');
+  const txt = document.getElementById('connTxt');
+  dot.className = 'conn-dot'; txt.textContent = 'جاري الجلب...';
+  try {
+    const res = await fetch(APPS_SCRIPT_URL + '?t=' + Date.now(), {redirect:'follow', cache:'no-store'});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    console.log('Raw API data:', json);
+    processJSON(json);
+    const now = new Date().toLocaleTimeString('ar-SA');
+    dot.className = 'conn-dot ok';
+    txt.textContent = '✅ ' + now;
+    clearTimeout(autoTimer);
+    autoTimer = setTimeout(loadData, AUTO_REFRESH_MS);
+  } catch(e) {
+    dot.className = 'conn-dot err';
+    txt.textContent = '❌ فشل الاتصال';
+    document.getElementById('loadingBox').innerHTML = `
+      <div class="loading-inner">
+        <div style="font-size:32px">❌</div>
+        <div style="font-size:15px;font-weight:800;color:var(--red);margin-top:8px">تعذر تحميل البيانات</div>
+        <div style="font-size:12px;color:var(--muted);margin:8px 0 14px">${e.message}</div>
+        <button class="btn btn-refresh" onclick="loadData()">🔄 إعادة المحاولة</button>
+      </div>`;
+  }
+}
+
+/* ═══ PROCESSING — PRESERVED FROM V1 ═══ */
+function processJSON(sheetsJSON) {
+  const summaryName = Object.keys(sheetsJSON).find(n => n.includes('الملخص')) || Object.keys(sheetsJSON)[0];
+  const summary = parseSummaryRows(sheetsJSON[summaryName] || []);
+  const live = parseBranchJSON(sheetsJSON, summary.months.map(m => m.monthName));
+  appData = { kpis: summary.kpis, months: [...summary.months, ...live] };
+  selectedMonth = appData.months[appData.months.length - 1]?.monthName;
+  const mo = getMonth();
+  const actualDays = (mo?.days || []).filter(d => d?.branches?.some(b => b.sales || b.cash || b.netDiff));
+  selectedDay = actualDays[actualDays.length - 1]?.dateKey || null;
+  populateFilterBranches();
+  populatePeriodDropdowns();
+  render();
+  document.getElementById('loadingBox').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+}
+
+function parseSummaryRows(rows) {
+  const kpiRow = rows[5] || [], months = [];
+  const kpis = { worstBranch: kpiRow[6], bestBranch: kpiRow[7] };
+  for (let i = 0; i < rows.length; i++) {
+    const cell = rows[i]?.[0];
+    if (typeof cell === 'string' && cell.includes('ملخص شهر')) {
+      const monthName = cell.replace('ملخص شهر','').trim(), branches = [];
+      let totals = null;
+      for (let j = i+2; j < i+18; j++) {
+        const r = rows[j]; if (!r) break;
+        if (r[1] === 'الإجمالي') { totals = {sales:parseNum(r[2]),cash:parseNum(r[3]),netDiff:parseNum(r[4]),deficit:parseNum(r[5]),surplus:parseNum(r[6])}; break; }
+        if (typeof r[1] === 'string' && r[1].includes('هافانا')) branches.push({name:r[1],sales:parseNum(r[2]),cash:parseNum(r[3]),netDiff:parseNum(r[4]),deficit:parseNum(r[5]),surplus:parseNum(r[6]),withinLimit:r[12]||''});
+      }
+      if (monthName) months.push({monthName,branches,totals,isLive:false,days:[]});
+    }
+  }
+  return {kpis,months};
+}
+
+function parseBranchJSON(sheetsJSON, existingNames) {
+  const monthsData = {};
+  BRANCH_SHEETS.forEach(({sheet,full}) => {
+    const rows = sheetsJSON[sheet]; if (!rows) return;
+    for (let i = 4; i < rows.length; i++) {
+      const r = rows[i]; if (!r) continue;
+      const mk = monthKeyFromStr(r[7]) || monthKeyFromStr(r[0]); if (!mk) continue;
+      const dk = dateKeyFromStr(r[0]) || dateKeyFromStr(r[7]) || mk+'-01';
+      const sales = parseNum(r[1]), cash = parseNum(r[2]);
+      const diff = (String(r[3]??'').trim() === '' ? (cash-sales) : parseNum(r[3]));
+      if (!monthsData[mk]) monthsData[mk] = {branches:{},days:{}};
+      if (!monthsData[mk].branches[full]) monthsData[mk].branches[full] = {sales:0,cash:0,diff:0,deficit:0,surplus:0};
+      addAgg(monthsData[mk].branches[full], sales, cash, diff);
+      if (!monthsData[mk].days[dk]) monthsData[mk].days[dk] = {};
+      if (!monthsData[mk].days[dk][full]) monthsData[mk].days[dk][full] = {sales:0,cash:0,diff:0,deficit:0,surplus:0};
+      addAgg(monthsData[mk].days[dk][full], sales, cash, diff);
+    }
+  });
+  return Object.keys(monthsData).sort().map(mk => {
+    const arName = keyToAr(mk);
+    if (existingNames.includes(arName)) return null;
+    const branches = makeBranches(monthsData[mk].branches);
+    const days = Object.keys(monthsData[mk].days).sort().map(dk => ({
+      dateKey: dk, branches: makeBranches(monthsData[mk].days[dk]),
+      totals: makeTotals(makeBranches(monthsData[mk].days[dk]))
+    }));
+    return {monthName: arName, monthKey: mk, branches, totals: makeTotals(branches), isLive:true, days};
+  }).filter(Boolean);
+}
+
+function addAgg(d, sales, cash, diff) {
+  d.sales += sales; d.cash += cash; d.diff += diff;
+  if (diff < 0) d.deficit += diff; if (diff > 0) d.surplus += diff;
+}
+function makeBranches(obj) {
+  return BRANCH_SHEETS.map(({full}) => {
+    const d = obj[full];
+    if (!d) return {name:full,sales:0,cash:0,netDiff:0,deficit:0,surplus:0,withinLimit:'—'};
+    const within = Math.abs(d.diff) <= Math.abs(d.sales)*0.005;
+    return {name:full,sales:d.sales,cash:d.cash,netDiff:d.diff,deficit:d.deficit,surplus:d.surplus,withinLimit:within?'✓ ضمن الحد':'✗ تجاوز الحد'};
+  });
+}
+function makeTotals(branches) {
+  return {
+    sales:   branches.reduce((s,b)=>s+b.sales,  0),
+    cash:    branches.reduce((s,b)=>s+b.cash,   0),
+    netDiff: branches.reduce((s,b)=>s+b.netDiff,0),
+    deficit: branches.reduce((s,b)=>s+b.deficit,0),
+    surplus: branches.reduce((s,b)=>s+b.surplus,0)
+  };
+}
+function getMonth() { return appData?.months.find(m => m.monthName === selectedMonth); }
+function getDay()   { const m = getMonth(); return m?.days?.find(d => d.dateKey === selectedDay); }
+function isCurrentMonth(monthName) {
+  // Compare ONLY with true device date — never show badge on past months
+  const now = new Date();
+  const arMonths = Object.values(MONTH_AR);      // ['يناير',...,'ديسمبر']
+  const currentLabel = `${arMonths[now.getMonth()]} ${now.getFullYear()}`;
+  return monthName === currentLabel;
+}
+
+/* ═══ PERIOD MODE FUNCTIONS ═══ */
+
+/**
+ * Convert Arabic month name ("يونيو 2026") → sortable key ("2026-06")
+ */
+function getMonthOrder(monthName) {
+  if (!monthName) return '';
+  // Live months already have monthKey on the object
+  const mo = appData?.months.find(m => m.monthName === monthName);
+  if (mo?.monthKey) return mo.monthKey;
+  // Fallback: compute from Arabic name
+  const parts = monthName.trim().split(' ');
+  if (parts.length < 2) return '';
+  const year   = parts[parts.length - 1];
+  const arName = parts.slice(0, -1).join(' ');
+  const arToNum = {};
+  Object.entries(MONTH_AR).forEach(([num, ar]) => { arToNum[ar] = num; });
+  const monthNum = arToNum[arName];
+  return (monthNum && year) ? `${year}-${monthNum}` : '';
+}
+
+/** Return all months in appData that fall within [fromMonth, toMonth] */
+function getMonthsInRange(fromMonth, toMonth) {
+  const fromKey = getMonthOrder(fromMonth);
+  const toKey   = getMonthOrder(toMonth);
+  if (!fromKey || !toKey) return [];
+  return (appData?.months || []).filter(m => {
+    const k = getMonthOrder(m.monthName);
+    return k >= fromKey && k <= toKey;
+  });
+}
+
+/** Aggregate branch data across an array of months — returns BRANCH_SHEETS-ordered array */
+function aggregateBranchesByPeriod(months) {
+  const map = {};  // full branch name → aggregated object
+  months.forEach(mo => {
+    (mo.branches || []).forEach(b => {
+      if (!b.name) return;
+      if (!map[b.name]) {
+        map[b.name] = {name:b.name, sales:0, cash:0, netDiff:0,
+                       deficit:0, surplus:0, varianceCount:0, monthCount:0, withinLimit:'—'};
+      }
+      const agg = map[b.name];
+      agg.sales    += Number(b.sales   || 0);
+      agg.cash     += Number(b.cash    || 0);
+      agg.netDiff  += Number(b.netDiff || 0);
+      if ((b.netDiff || 0) < 0) agg.deficit  += Number(b.netDiff);
+      if ((b.netDiff || 0) > 0) agg.surplus  += Number(b.netDiff);
+      if (Math.abs(b.netDiff || 0) > 0.009) agg.varianceCount++;
+      if (b.sales || b.cash) agg.monthCount++;
+    });
+  });
+  // Return in canonical BRANCH_SHEETS order (all 7 branches)
+  return BRANCH_SHEETS.map(({full}) =>
+    map[full] || {name:full, sales:0, cash:0, netDiff:0, deficit:0, surplus:0, varianceCount:0, monthCount:0, withinLimit:'—'}
+  );
+}
+
+function isPeriodModeActive() { return !!(periodFrom && periodTo); }
+
+function clearPeriodMode() {
+  periodFrom = null; periodTo = null;
+  document.getElementById('periodErr').style.display = 'none';
+  document.getElementById('pFrom').value = '';
+  document.getElementById('pTo').value   = '';
+  render();
+  showToast('تم إلغاء فلتر الفترة — عرض الشهر المختار', 'ok');
+}
+
+function applyPeriodFilter() {
+  const from = document.getElementById('pFrom').value;
+  const to   = document.getElementById('pTo').value;
+  const err  = document.getElementById('periodErr');
+
+  if (!from || !to) { err.style.display='inline'; err.textContent='⚠️ يرجى اختيار شهر البداية والنهاية'; return; }
+
+  const fKey = getMonthOrder(from), tKey = getMonthOrder(to);
+  if (!fKey || !tKey || fKey > tKey) {
+    err.style.display = 'inline';
+    err.textContent   = '⚠️ تاريخ البداية يجب أن يكون قبل تاريخ النهاية';
+    return;
+  }
+  err.style.display = 'none';
+  const months = getMonthsInRange(from, to);
+  if (!months.length) {
+    err.style.display='inline'; err.textContent='⚠️ لا توجد بيانات في هذه الفترة'; return;
+  }
+  periodFrom = from; periodTo = to;
+  render();
+  showToast(`✅ تم تطبيق الفترة: ${from} — ${to}`, 'ok');
+}
+
+function showToast(msg, type='info') {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .4s'; setTimeout(()=>el.remove(),400); }, 3000);
+}
+
+/** Populate From/To selects with available months */
+function populatePeriodDropdowns() {
+  const months = (appData?.months || []).map(m => m.monthName);
+  const opts = ['<option value="">-- اختر --</option>',
+    ...months.map(m => `<option value="${m}">${m}</option>`)].join('');
+  const pFrom = document.getElementById('pFrom');
+  const pTo   = document.getElementById('pTo');
+  if (pFrom) { const v=pFrom.value; pFrom.innerHTML=opts; if(v)pFrom.value=v; }
+  if (pTo)   { const v=pTo.value;   pTo.innerHTML=opts;   if(v)pTo.value=v;   }
+}
+
+/* ═══ COMPUTED METRICS (NEW) ═══ */
+function computeMetrics(branches, totals) {
+  const withData     = branches.filter(b => b.sales > 0);
+  const matched      = withData.filter(b => Math.abs(b.netDiff) <= 0.009);
+  const issueBrs     = withData.filter(b => Math.abs(b.netDiff) > 0.009);
+  const deficitBrs   = issueBrs.filter(b => b.netDiff < 0);
+  const surplusBrs   = issueBrs.filter(b => b.netDiff > 0);
+  const sorted       = [...issueBrs].sort((a,b) => Math.abs(b.netDiff) - Math.abs(a.netDiff));
+  const biggest      = sorted[0] || null;
+  const compliance   = withData.length > 0 ? matched.length / withData.length * 100 : 0;
+  const totSales     = totals?.sales  || branches.reduce((s,b)=>s+b.sales,  0);
+  const totCash      = totals?.cash   || branches.reduce((s,b)=>s+b.cash,   0);
+  const totSurplus   = totals?.surplus|| branches.reduce((s,b)=>s+(b.netDiff>0?b.netDiff:0), 0);
+  const totDeficit   = totals?.deficit|| branches.reduce((s,b)=>s+(b.netDiff<0?b.netDiff:0), 0);
+  const netDiff      = totals?.netDiff|| totSurplus + totDeficit;
+
+  return {withData,matched,issueBrs,deficitBrs,surplusBrs,sorted,biggest,compliance,
+          totSales,totCash,totSurplus,totDeficit,netDiff,
+          totalBranches:withData.length,matchedCount:matched.length,issueCount:issueBrs.length};
+}
+
+function computeRisk(metrics) {
+  const {issueCount, netDiff, totDeficit, sorted} = metrics;
+  const absDeficit = Math.abs(totDeficit), absNet = Math.abs(netDiff);
+  const maxSingle  = sorted[0] ? Math.abs(sorted[0].netDiff) : 0;
+  if (absNet < T.NORMAL_DIFF && issueCount === 0)
+    return {level:'Normal',   cls:'normal',  icon:'✅', label:'وضع طبيعي',       color:'var(--green)'};
+  if (absDeficit >= T.CRITICAL_AMOUNT || maxSingle >= T.CRITICAL_SINGLE)
+    return {level:'Critical', cls:'critical',icon:'🚨', label:'حرج — تصعيد فوري', color:'var(--red)'};
+  if (issueCount >= T.HIGH_BRANCHES || absDeficit >= T.HIGH_AMOUNT)
+    return {level:'High',     cls:'high',    icon:'🔴', label:'خطر عالي',          color:'var(--red)'};
+  if (issueCount > 0)
+    return {level:'Watch',    cls:'watch',   icon:'🟡', label:'تحت المراقبة',      color:'var(--orange)'};
+  return   {level:'Normal',   cls:'normal',  icon:'✅', label:'وضع طبيعي',         color:'var(--green)'};
+}
+
+function computeBranchRisk(b) {
+  if (!b.sales) return {level:'N/A', cls:'b-gld', pct:0, type:'nodata', action:'لا توجد بيانات'};
+  const absDiff = Math.abs(b.netDiff), p = b.sales>0 ? absDiff/b.sales : 0;
+  if (Math.abs(b.netDiff) <= 0.009) return {level:'Normal',cls:'b-grn',pct:p*100,type:'matched',action:'اعتماد وإغلاق'};
+  const type = b.netDiff < 0 ? 'deficit' : 'surplus';
+  if (p < T.BR_LOW)    return {level:'Low',     cls:'b-grn',pct:p*100,type,action:'مراجعة بسيطة'};
+  if (p < T.BR_MEDIUM) return {level:'Medium',  cls:'b-org',pct:p*100,type,action:'مراجعة مع المحاسب'};
+  if (p < T.BR_HIGH)   return {level:'High',    cls:'b-red',pct:p*100,type,action:'تصعيد لمدير الفرع'};
+  return                      {level:'Critical',cls:'b-red',pct:p*100,type,action:'تصعيد فوري للإدارة'};
+}
+
+function computeTrend(days, currentDayKey) {
+  const sorted = [...days].sort((a,b) => a.dateKey.localeCompare(b.dateKey));
+  if (sorted.length < 2) return null;
+  const idx = currentDayKey ? sorted.findIndex(d => d.dateKey === currentDayKey) : sorted.length - 1;
+  const ci  = idx < 1 ? sorted.length - 1 : idx;
+  if (ci < 1) return null;
+
+  const todayDay = sorted[ci], yestDay = sorted[ci - 1];
+  const tm = computeMetrics(todayDay.branches, todayDay.totals);
+  const ym = computeMetrics(yestDay.branches,  yestDay.totals);
+
+  // ── Branch-by-branch comparison ───────────────────────────────────
+  // Rule: improvement = abs(today diff) < abs(yesterday diff) by > 1 ريال
+  const branchComparisons = BRANCH_SHEETS.map(({full}) => {
+    const tb = todayDay.branches.find(b => b.name === full) || {name:full,sales:0,cash:0,netDiff:0};
+    const yb = yestDay.branches.find(b  => b.name === full)  || {name:full,sales:0,cash:0,netDiff:0};
+    const todayDiff     = tb.netDiff;
+    const yesterdayDiff = yb.netDiff;
+    const change        = Math.abs(todayDiff) - Math.abs(yesterdayDiff); // negative = less variance = improved
+
+    let trend = 'stable';
+    if (Math.abs(change) < 1)  trend = 'stable';
+    else if (change < 0)       trend = 'improved';   // abs diff shrank = better
+    else                       trend = 'worsened';   // abs diff grew  = worse
+
+    const todayStatus = !tb.sales ? 'nodata'
+                      : Math.abs(todayDiff) <= 0.009 ? 'matched'
+                      : todayDiff < 0 ? 'deficit' : 'surplus';
+
+    const action = (trend === 'worsened' && todayStatus !== 'matched') ? 'مراجعة فورية مع المحاسب'
+                 : trend === 'improved'         ? 'متابعة عادية'
+                 : todayStatus === 'matched'    ? 'اعتماد وإغلاق'
+                 : todayStatus === 'nodata'     ? 'مراجعة البيانات'
+                 :                               'متابعة عادية';
+
+    return {branch:full, name:cleanBranch(full), todayDiff, yesterdayDiff, change,
+            todayStatus, trend, action, hasSales: !!tb.sales || !!yb.sales};
+  });
+
+  const improved  = branchComparisons.filter(c => c.trend === 'improved');
+  const worsened  = branchComparisons.filter(c => c.trend === 'worsened');
+  const stable    = branchComparisons.filter(c => c.trend === 'stable');
+  // Sort worsened: worst first (highest positive change = most worsened)
+  const worsenedSorted = [...worsened].sort((a,b) => b.change - a.change);
+  // Sort improved: best first (most negative change = most improved)
+  const improvedSorted = [...improved].sort((a,b) => a.change - b.change);
+  const bestImproved  = improvedSorted[0]  || null;
+  const worstWorsened = worsenedSorted[0]  || null;
+
+  // ── Overall direction (issue count more reliable than netDiff sign) ─
+  const direction = tm.issueCount < ym.issueCount ? 'Improving'
+                  : tm.issueCount > ym.issueCount ? 'Worsening'
+                  : Math.abs(tm.netDiff) < Math.abs(ym.netDiff) - 0.5 ? 'Improving'
+                  : Math.abs(tm.netDiff) > Math.abs(ym.netDiff) + 0.5 ? 'Worsening'
+                  : 'Stable';
+
+  // ── MTD (month-to-date) stats ──────────────────────────────────────
+  const dayStats    = sorted.map(d => ({key:d.dateKey, m:computeMetrics(d.branches, d.totals)}));
+  const bestDay     = dayStats.reduce((b,d) => d.m.issueCount < b.m.issueCount ? d : b, dayStats[0]);
+  const worstDay    = dayStats.reduce((w,d) => d.m.issueCount > w.m.issueCount ? d : w, dayStats[0]);
+  const avgNetDiff  = dayStats.reduce((s,d) => s + d.m.netDiff, 0) / dayStats.length;
+  const perfectDays = dayStats.filter(d => d.m.issueCount === 0).length;
+  const varianceDays= dayStats.length - perfectDays;
+
+  return {
+    today: tm, yesterday: ym, todayKey: todayDay.dateKey, yesterdayKey: yestDay.dateKey,
+    direction, branchComparisons, improvedBranches: improved, worsenedBranches: worsened, stableBranches: stable,
+    improvedSorted, worsenedSorted, bestImproved, worstWorsened,
+    bestDay, worstDay, allDays: dayStats,
+    mtdStats: {avgNetDiff, perfectDays, varianceDays, totalDays: dayStats.length}
+  };
+}
+
+function computeDataQuality(branches, days) {
+  const issues = [];
+  const noData = branches.filter(b => !b.sales);
+  if (noData.length) issues.push({lbl:'فروع بدون بيانات', count:noData.length, cls:'issue',
+    detail: noData.map(b=>cleanBranch(b.name)).join('، '), fix:'مراجعة الإدخال في Google Sheets'});
+  const zeroSales = branches.filter(b => b.sales === 0 && b.cash !== 0);
+  if (zeroSales.length) issues.push({lbl:'بيانات نقدية بدون مبيعات', count:zeroSales.length, cls:'issue',
+    detail:'نقدية موجودة رغم عدم وجود مبيعات مسجّلة', fix:'التحقق من إدخال المبيعات'});
+  const bigDiff = branches.filter(b => b.sales > 0 && Math.abs(b.netDiff) > b.sales * 0.1);
+  if (bigDiff.length) issues.push({lbl:'فروقات غير منطقية (>10%)', count:bigDiff.length, cls:'issue',
+    detail:bigDiff.map(b=>cleanBranch(b.name)).join('، '), fix:'مراجعة أرقام التسوية يدوياً'});
+  const okItems = [];
+  if (!noData.length)    okItems.push({lbl:'جميع الفروع بها بيانات',    count:branches.filter(b=>b.sales).length, cls:'ok', fix:''});
+  if (!zeroSales.length) okItems.push({lbl:'لا توجد إدخالات ناقصة',     count:0, cls:'ok', fix:''});
+  if (!bigDiff.length)   okItems.push({lbl:'لا توجد فروقات غير منطقية', count:0, cls:'ok', fix:''});
+  if (days && days.length) okItems.push({lbl:`أيام مسجّلة: ${days.length}`, count:days.length, cls:'ok', fix:''});
+  return {issues, okItems};
+}
+
+/* ═══ FILTER HELPERS ═══ */
+function populateFilterBranches() {
+  const sel = document.getElementById('fBranch');
+  if (!sel) return;
+  const saved = sel.value;
+  sel.innerHTML = '<option value="all">كل الفروع</option>' +
+    BRANCH_SHEETS.map(b => `<option value="${b.full}">${b.sheet}</option>`).join('');
+  sel.value = saved;
+}
+
+function applyFilter() {
+  filterState = {
+    branch: document.getElementById('fBranch').value,
+    status: document.getElementById('fStatus').value,
+    risk:   document.getElementById('fRisk').value
+  };
+  render();
+}
+
+function resetFilter() {
+  filterState = {branch:'all', status:'all', risk:'all'};
+  document.getElementById('fBranch').value = 'all';
+  document.getElementById('fStatus').value = 'all';
+  document.getElementById('fRisk').value   = 'all';
+  render();
+}
+
+function filterBranches(branches) {
+  let res = [...branches];
+  if (filterState.branch !== 'all') res = res.filter(b => b.name === filterState.branch);
+  if (filterState.status !== 'all') {
+    res = res.filter(b => {
+      if (filterState.status === 'matched') return b.sales && Math.abs(b.netDiff) <= 0.009;
+      if (filterState.status === 'deficit') return b.netDiff < -0.009;
+      if (filterState.status === 'surplus') return b.netDiff > 0.009;
+      if (filterState.status === 'nodata')  return !b.sales;
+      return true;
+    });
+  }
+  if (filterState.risk !== 'all') {
+    res = res.filter(b => computeBranchRisk(b).level === filterState.risk);
+  }
+  return res;
+}
+
+/* ═══ MAIN RENDER ═══ */
+function render() {
+  // ── PERIOD MODE ────────────────────────────────────────────
+  if (isPeriodModeActive()) {
+    renderInPeriodMode();
+    return;
+  }
+
+  // ── NORMAL MODE ────────────────────────────────────────────
+  const mo = getMonth(); if (!mo) return;
+  const dayObj = getDay() || null;
+  const view = dayObj || mo;
+  const rawBranches = view.branches || mo.branches;
+  const branches = filterBranches(rawBranches);
+  const metrics = computeMetrics(branches, null);
+  const risk    = computeRisk(metrics);
+  const actualDays = (mo.days||[]).filter(d => d?.branches?.some(b=>b.sales||b.cash||b.netDiff));
+  const trend   = computeTrend(actualDays, selectedDay);
+  const dq      = computeDataQuality(rawBranches, actualDays);
+
+  console.log('Selected month:', selectedMonth, '| Selected day:', selectedDay);
+  console.log('Computed metrics:', metrics);
+
+  renderTabs(mo, actualDays, null);
+  renderExecSummary(metrics, risk, null);
+  renderKPIs(metrics, risk);
+  renderRiskBanner(risk);
+  renderBranchGrid(branches, metrics);
+  renderVarianceAnalysis(branches, metrics);
+  renderBranchRiskTable(branches);
+  renderTrend(trend, actualDays);
+  renderActionPlan(metrics, branches, dq);
+  renderDataQuality(dq);
+  renderCharts(branches, actualDays);
+  renderWhatsApp(metrics, branches, mo, dayObj, trend, false, null, null);
+}
+
+/* ── PERIOD MODE render ─────────────────────────────────────── */
+function renderInPeriodMode() {
+  const monthsInRange = getMonthsInRange(periodFrom, periodTo);
+  if (!monthsInRange.length) { showToast('لا توجد بيانات في هذه الفترة', 'err'); return; }
+
+  const rawBranches = aggregateBranchesByPeriod(monthsInRange);
+  const branches    = filterBranches(rawBranches);
+  const metrics     = computeMetrics(branches, null);
+  const risk        = computeRisk(metrics);
+  const dq          = computeDataQuality(rawBranches, []);
+  const periodLabel = `${periodFrom} — ${periodTo}`;
+
+  console.log('Period Mode:', periodLabel, '| months:', monthsInRange.length, '| metrics:', metrics);
+
+  renderTabs(null, [], periodLabel);
+  renderExecSummary(metrics, risk, periodLabel);
+  renderKPIs(metrics, risk);
+  renderRiskBanner(risk);
+  renderBranchGrid(branches, metrics);
+  renderVarianceAnalysis(branches, metrics);
+  renderBranchRiskTable(branches);
+  renderTrend(null, []);   // Trend N/A in period mode
+  renderActionPlan(metrics, branches, dq);
+  renderDataQuality(dq);
+  renderCharts(branches, []);
+  renderWhatsApp(metrics, branches, {monthName: periodLabel}, null, null, true, periodFrom, periodTo);
+}
+
+/* ═══ TABS ═══ */
+function renderTabs(mo, actualDays, periodLabel) {
+  const inPeriod = isPeriodModeActive();
+
+  // ── Month Tabs ───────────────────────────────────────────
+  document.getElementById('monthTabs').innerHTML = appData.months.map(x => {
+    const isCurrent = isCurrentMonth(x.monthName);   // only true current calendar month
+    const isActive  = x.monthName === selectedMonth;
+    const isLive    = x.isLive;
+    const cls = [
+      isActive  ? 'active'         : '',
+      isCurrent && !isActive ? 'current-month' : '',
+      isLive && !isCurrent   ? 'live'          : '',
+    ].filter(Boolean).join(' ');
+    const badge = isCurrent ? '<span class="badge-new">جديد</span>' : '';
+    return `<button class="mtab ${cls}" onclick="selectMonth('${x.monthName}')">${badge}${x.monthName}</button>`;
+  }).join('');
+
+  // ── Period Mode banner (replaces day tabs when period active) ──
+  const dtEl = document.getElementById('dayTabs');
+  if (inPeriod) {
+    dtEl.innerHTML = `
+      <div class="period-mode-banner">
+        <span style="font-size:18px">📅</span>
+        <div>
+          <strong>Period Mode Active</strong> —
+          <span style="color:var(--text)">تحليل فترة: ${periodFrom} — ${periodTo}</span>
+          <span class="chip-period" style="margin-right:8px">📊 ${(appData?.months.filter(m=>{
+            const k=getMonthOrder(m.monthName);
+            return k>=getMonthOrder(periodFrom)&&k<=getMonthOrder(periodTo);
+          })||[]).length} شهور</span>
+        </div>
+        <button class="btn-period-reset" onclick="clearPeriodMode()" style="margin-right:auto">✕ إلغاء الفترة</button>
+      </div>`;
+  } else {
+    dtEl.innerHTML = (actualDays||[]).map(d => `
+      <button class="dtab ${d.dateKey===selectedDay?'active':''}" onclick="selectDay('${d.dateKey}')">
+        ${dateToAr(d.dateKey)}
+      </button>`).join('');
+  }
+}
+
+/* ═══ EXECUTIVE SUMMARY ═══ */
+function renderExecSummary(m, risk, contextLabel) {
+  // contextLabel = period label string in Period Mode, null in normal mode
+  const date = contextLabel || (selectedDay ? dateToAr(selectedDay) : (selectedMonth||''));
+  const isPeriod = !!contextLabel;
+  let text = '', action = '', actionCls = 'ok';
+
+  if (m.issueCount === 0 && m.withData.length > 0) {
+    text = `جميع الفروع (${m.withData.length}) مطابقة في ${date}. لا توجد فروقات نقدية.`;
+    action = '✅ الإجراء: اعتماد تسوية الفروع وإغلاق اليوم.';
+    actionCls = 'ok';
+  } else if (m.issueCount > 0) {
+    const biggest = m.biggest;
+    text = `يوجد <strong style="color:var(--red)">${m.issueCount}</strong> ${m.issueCount===1?'فرع':'فروع'} ` +
+           `بها فروقات نقدية ${isPeriod?'خلال الفترة':'بتاريخ'} ${date}، ` +
+           `بإجمالي صافي ${m.netDiff >= 0 ? 'فائض' : 'عجز'} <strong style="color:${m.netDiff>=0?'var(--blue)':'var(--red)'}">${money(m.netDiff,true)}</strong>. ` +
+           (biggest ? `أعلى فرق في <strong style="color:var(--gold2)">${cleanBranch(biggest.name)}</strong> بقيمة <strong>${money(biggest.netDiff,true)}</strong>.` : '') +
+           ` نسبة المطابقة: <strong style="color:${m.compliance>=80?'var(--green)':'var(--orange)'}">${m.compliance.toFixed(0)}%</strong>.`;
+    action = risk.level === 'Critical' ? '🚨 تصعيد فوري: مراجعة مع الإدارة ومدير الفرع الأعلى فرقًا خلال ساعة.' :
+             risk.level === 'High'     ? '⚠️ إجراء عاجل: مراجعة التسوية مع مديري الفروع المتأثرة خلال اليوم.' :
+                                         '📌 متابعة: مراجعة الفروع بها فروقات مع المحاسب المسؤول.';
+    actionCls = '';
+  } else {
+    text = 'لا توجد بيانات للفترة المحددة.';
+    action = 'ℹ️ يرجى اختيار شهر أو يوم به بيانات.';
+  }
+
+  document.getElementById('sec-exec').innerHTML = `
+    <div class="sec-ttl" style="margin-top:4px">📋 الخلاصة التنفيذية</div>
+    <div class="card exec-card">
+      <div class="exec-lbl">الخلاصة التنفيذية — ${date}</div>
+      <div class="exec-text" style="margin-top:8px">${text}</div>
+      <div class="exec-action ${actionCls}" style="margin-top:12px">${action}</div>
+      <div class="chips">
+        ${isPeriod?'<span class="chip-period">📅 Period Mode Active</span>':''}
+        <span class="chip ${m.issueCount?'bad':'ok'}">${m.issueCount?'🚨 '+m.issueCount+' فروع بها فروقات':'✅ جميع الفروع مطابقة'}</span>
+        <span class="chip info">📊 ${m.withData.length} فروع بها بيانات</span>
+        <span class="chip ${m.compliance>=80?'ok':'warn'}">نسبة المطابقة ${m.compliance.toFixed(0)}%</span>
+        <span class="chip gold">⚠️ ${risk.icon} ${risk.level}</span>
+        ${m.netDiff!==0?`<span class="chip ${m.netDiff>=0?'info':'bad'}">صافي الفرق ${money(m.netDiff,true)}</span>`:''}
+      </div>
+    </div>`;
+}
+
+/* ═══ KPI CARDS — all values from filtered metrics (no rawTotals mixing) ═══ */
+function renderKPIs(m, risk) {
+  // ← all values from filtered branches only — consistent with day/month/filter selection
+  const cards = [
+    {lbl:'إجمالي المبيعات',   val:money(m.totSales),       hint:'إجمالي مبيعات الفروع المحددة', cls:'c-tel big',vcls:'tel', icon:'💰'},
+    {lbl:'إجمالي النقدية',    val:money(m.totCash),        hint:'نقدية محصّلة',                 cls:'c-blu', vcls:'blu', icon:'💵'},
+    {lbl:'صافي الفرق',        val:money(m.netDiff,true),   hint:'فائض − عجز',               cls:m.netDiff>=0?'c-grn':'c-red', vcls:m.netDiff>=0?'grn':'red', icon:'🔄'},
+    {lbl:'إجمالي العجز',      val:money(m.totDeficit,true),hint:'مجموع النقص النقدي',        cls:'c-red', vcls:'red', icon:'📉'},
+    {lbl:'إجمالي الفائض',     val:money(m.totSurplus,true),hint:'مجموع الزيادة النقدية',    cls:'c-blu', vcls:'blu', icon:'📈'},
+    {lbl:'فروع مطابقة',       val:m.matchedCount,          hint:`${m.compliance.toFixed(0)}% من الفروع`, cls:'c-grn', vcls:'grn', icon:'✅'},
+    {lbl:'فروع بها فروقات',   val:m.issueCount,            hint:'تحتاج متابعة',              cls:m.issueCount?'c-red':'c-grn', vcls:m.issueCount?'red':'grn', icon:'⚠️'},
+    {lbl:'نسبة المطابقة',     val:m.compliance.toFixed(0)+'%', hint:'Compliance Rate',       cls:m.compliance>=90?'c-grn':m.compliance>=70?'c-org':'c-red', vcls:m.compliance>=90?'grn':m.compliance>=70?'org':'red', icon:'📊'},
+    {lbl:'أعلى فرع فرقًا',    val:m.biggest?cleanBranch(m.biggest.name):'—', hint:m.biggest?money(m.biggest.netDiff,true):'مطابق', cls:'c-gld', vcls:'gld', icon:'🏆'},
+    {lbl:'مستوى الخطر',       val:risk.level,             hint:risk.label,                  cls:'c-org', vcls:`${risk.cls==='normal'?'grn':risk.cls==='watch'?'org':'red'}`, icon:risk.icon},
+  ];
+
+  document.getElementById('sec-kpis').innerHTML = `
+    <div class="sec-ttl">📊 مؤشرات الأداء الرئيسية</div>
+    <div class="kpi-grid">
+      ${cards.map(c=>`
+        <div class="card kpi ${c.cls}">
+          <div class="kpi-icon">${c.icon}</div>
+          <div class="kpi-lbl">${c.lbl}</div>
+          <div class="kpi-val ${c.vcls} ${c.cls.includes('big')?'big':''}">${c.val}</div>
+          <div class="kpi-hint">${c.hint}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+/* ═══ RISK BANNER ═══ */
+function renderRiskBanner(risk) {
+  document.getElementById('riskBanner').innerHTML = `
+    <div class="risk-banner ${risk.cls}">
+      <div class="risk-icon">${risk.icon}</div>
+      <div>
+        <div class="risk-title" style="color:${risk.color}">مستوى الخطر العام: ${risk.level} — ${risk.label}</div>
+        <div class="risk-sub">
+          ${risk.level==='Normal'  ? 'لا توجد فروقات نقدية تُستدعي الانتباه.' : ''}
+          ${risk.level==='Watch'   ? 'يوجد فروقات بسيطة، يُنصح بالمراجعة مع المحاسب المسؤول.' : ''}
+          ${risk.level==='High'    ? 'يوجد فروقات متعددة أو بقيمة متوسطة، يجب المراجعة مع مدير الفرع.' : ''}
+          ${risk.level==='Critical'? 'فروقات كبيرة تستدعي تصعيداً فورياً للإدارة العليا.' : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ═══ BRANCH GRID CARDS ═══ */
+function renderBranchGrid(branches, metrics) {
+  const cards = branches.map(b => {
+    const br = computeBranchRisk(b);
+    const cls = !b.sales ? '' : br.type==='matched' ? 'ok' : br.type==='deficit' ? 'deficit' : 'surplus';
+    return `
+      <div class="br-card ${cls}">
+        <div class="br-name">${cleanBranch(b.name)}</div>
+        ${!b.sales
+          ? '<div class="br-diff" style="color:var(--muted);font-size:14px">لا توجد بيانات</div>'
+          : `<div class="br-diff ${b.netDiff>=0&&Math.abs(b.netDiff)>0.009?'':''}">
+              <span style="color:${br.type==='matched'?'var(--green)':br.type==='deficit'?'var(--red)':'var(--blue)'}">
+                ${br.type==='matched'?'مطابق ✨':money(b.netDiff,true)}
+              </span>
+             </div>
+             <div class="br-type">${br.type==='matched'?'مطابق تام':br.type==='deficit'?'🔴 عجز':'🔵 فائض'} | ${br.level}</div>
+             <div class="br-detail">
+               مبيعات: ${money(b.sales)} | نقدية: ${money(b.cash)}<br>
+               نسبة الفرق: ${pct(br.pct)} | ${br.action}
+             </div>`
+        }
+      </div>`;
+  }).join('');
+
+  document.getElementById('sec-branches').innerHTML = `
+    <div class="sec-ttl">🏢 حالة الفروع</div>
+    <div class="branch-grid">${cards}</div>`;
+}
+
+/* ═══ VARIANCE ANALYSIS ═══ */
+function renderVarianceAnalysis(branches, metrics) {
+  const hasDiff = metrics.sorted;
+  const maxAbs  = hasDiff.length > 0 ? Math.abs(hasDiff[0].netDiff) : 1;
+  const top5    = hasDiff.slice(0,5);
+
+  if (!top5.length) {
+    document.getElementById('sec-variance').innerHTML = `
+      <div class="sec-ttl">⚖️ تحليل الفروقات</div>
+      <div class="card" style="padding:24px;text-align:center;color:var(--muted)">✅ لا توجد فروقات نقدية</div>`;
+    return;
+  }
+
+  const rows = top5.map((b,i) => {
+    const br = computeBranchRisk(b);
+    const fillColor = b.netDiff < 0 ? 'var(--red)' : 'var(--blue)';
+    const fillW = Math.min(100, Math.abs(b.netDiff) / maxAbs * 100);
+    return `
+      <div class="var-row">
+        <div style="width:140px;font-size:13px;font-weight:700">${i+1}. ${cleanBranch(b.name)}</div>
+        <div class="var-bar">
+          <div class="var-fill" style="width:${fillW}%;background:${fillColor}">
+            <span>${money(b.netDiff,true)}</span>
+          </div>
+        </div>
+        <div style="width:90px;text-align:left;font-size:11px;color:var(--muted)">${pct(br.pct)} من المبيعات</div>
+        <div style="width:70px;text-align:left"><span class="badge ${b.netDiff<0?'b-red':'b-blu'}">${b.netDiff<0?'عجز':'فائض'}</span></div>
+        <div style="width:80px;text-align:left"><span class="badge ${br.cls}">${br.level}</span></div>
+      </div>`;
+  }).join('');
+
+  const monthRows = branches.filter(b=>b.sales).map(b => {
+    const br = computeBranchRisk(b);
+    return `<tr>
+      <td>${cleanBranch(b.name)}</td>
+      <td>${money(b.sales)}</td><td>${money(b.cash)}</td>
+      <td class="${b.netDiff>=0?'':''}"><span style="color:${b.netDiff>0.009?'var(--blue)':b.netDiff<-0.009?'var(--red)':'var(--green)'}">${money(b.netDiff,true)}</span></td>
+      <td>${pct(br.pct)}</td>
+      <td><span class="badge ${b.netDiff<-0.009?'b-red':b.netDiff>0.009?'b-blu':'b-grn'}">${b.netDiff<-0.009?'عجز':b.netDiff>0.009?'فائض':'مطابق'}</span></td>
+      <td><span class="badge ${br.cls}">${br.level}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('sec-variance').innerHTML = `
+    <div class="sec-ttl">⚖️ تحليل الفروقات</div>
+    <div class="card" style="padding:18px 20px;margin-bottom:14px">
+      <div style="font-size:12px;color:var(--gold);font-weight:700;margin-bottom:12px">أعلى 5 فروع بها فروقات</div>
+      ${rows}
+      <div style="display:flex;gap:18px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+        <div><span style="color:var(--muted);font-size:11px">إجمالي العجز:</span> <span style="color:var(--red);font-weight:700">${money(metrics.totDeficit,true)}</span></div>
+        <div><span style="color:var(--muted);font-size:11px">إجمالي الفائض:</span> <span style="color:var(--blue);font-weight:700">${money(metrics.totSurplus,true)}</span></div>
+        <div><span style="color:var(--muted);font-size:11px">صافي:</span> <span style="color:${metrics.netDiff>=0?'var(--blue)':'var(--red)'};font-weight:700">${money(metrics.netDiff,true)}</span></div>
+      </div>
+    </div>
+    <div class="sec-ttl">📋 جدول كامل الفروع</div>
+    <div class="card tbl-card">
+      <table><thead><tr><th>الفرع</th><th>المبيعات</th><th>النقدية</th><th>الفرق</th><th>% الفرق</th><th>النوع</th><th>مستوى الخطر</th></tr></thead>
+      <tbody>${monthRows}</tbody></table>
+    </div>`;
+}
+
+/* ═══ BRANCH RISK TABLE ═══ */
+function renderBranchRiskTable(branches) {
+  // Merged into variance section above
+}
+
+/* ═══ TREND ═══ */
+function renderTrend(trend, days) {
+  const el = document.getElementById('sec-trend');
+
+  // ── No data: placeholder ──────────────────────────────────────────
+  if (!trend) {
+    el.innerHTML = `
+      <div class="sec-ttl">📈 Trend — مقارنة الأيام</div>
+      <div class="card" style="padding:28px;text-align:center;color:var(--muted)">
+        <div style="font-size:28px;margin-bottom:8px">📅</div>
+        <div style="font-weight:700;color:var(--text);margin-bottom:6px">Trend comparison will be available after at least two daily records are available</div>
+        <div style="font-size:11px">يوجد حالياً ${days.length} ${days.length===1?'يوم':'أيام'} مسجّلة. بعد تسجيل يومين على الأقل يظهر التحليل التفصيلي لكل فرع.</div>
+      </div>`;
+    return;
+  }
+
+  const {today:t, yesterday:y, todayKey, yesterdayKey,
+         direction, branchComparisons, improvedSorted, worsenedSorted,
+         bestImproved, worstWorsened, bestDay, worstDay, allDays, mtdStats} = trend;
+
+  const dirLabel = direction==='Improving'?'✅ تحسّن':direction==='Worsening'?'⚠️ تراجع':'→ ثابت';
+  const dirCls   = direction==='Improving'?'improved':direction==='Worsening'?'worsened':'stable';
+  const dirColor = direction==='Improving'?'var(--green)':direction==='Worsening'?'var(--red)':'var(--muted)';
+
+  // ── 1. Executive Trend Summary KPIs ──────────────────────────────
+  const summaryKPIs = `
+    <div class="trend-kpi-grid">
+      <div class="trend-kpi ${dirCls}">
+        <div class="t-kpi-lbl">الاتجاه العام</div>
+        <div class="t-kpi-val ${dirCls}" style="font-size:16px">${dirLabel}</div>
+        <div class="t-kpi-sub">${dateToAr(yesterdayKey)} ← ${dateToAr(todayKey)}</div>
+      </div>
+      <div class="trend-kpi">
+        <div class="t-kpi-lbl">صافي الفرق — اليوم</div>
+        <div class="t-kpi-val ${t.netDiff>=0?'stable':'worsened'}">${money(t.netDiff,true)}</div>
+        <div class="t-kpi-sub">الأمس: ${money(y.netDiff,true)}</div>
+      </div>
+      <div class="trend-kpi">
+        <div class="t-kpi-lbl">تحسّن / تراجع / ثابت</div>
+        <div class="t-kpi-val">
+          <span style="color:var(--green)">${trend.improvedBranches.length}↑</span>
+          <span style="color:var(--red);margin:0 6px">${trend.worsenedBranches.length}↓</span>
+          <span style="color:var(--muted)">${trend.stableBranches.length}→</span>
+        </div>
+        <div class="t-kpi-sub">من أصل ${branchComparisons.filter(b=>b.hasSales).length} فروع</div>
+      </div>
+      <div class="trend-kpi">
+        <div class="t-kpi-lbl">فروع بها فروقات</div>
+        <div class="t-kpi-val ${t.issueCount<=y.issueCount?'improved':'worsened'}">${t.issueCount} ← ${y.issueCount}</div>
+        <div class="t-kpi-sub">${t.issueCount<y.issueCount?'✅ تقليل الفروقات':t.issueCount>y.issueCount?'⚠️ ازدادت الفروقات':'لا تغيير'}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+      ${bestImproved ? `<div style="background:rgba(16,185,129,.08);border:1px solid var(--grn-bdr);border-radius:9px;padding:8px 13px;font-size:12px">
+        <span style="color:var(--muted)">✅ أفضل تحسن: </span><strong style="color:var(--green)">${bestImproved.name}</strong>
+        <span style="color:var(--muted);margin-right:6px">${money(Math.abs(bestImproved.change))} تحسن</span>
+      </div>` : ''}
+      ${worstWorsened ? `<div style="background:rgba(239,68,68,.08);border:1px solid var(--red-bdr);border-radius:9px;padding:8px 13px;font-size:12px">
+        <span style="color:var(--muted)">⚠️ أكبر تراجع: </span><strong style="color:var(--red)">${worstWorsened.name}</strong>
+        <span style="color:var(--muted);margin-right:6px">${money(worstWorsened.change)} زيادة في الفرق</span>
+      </div>` : ''}
+    </div>`;
+
+  // ── 2. Branch-by-Branch Comparison Table ─────────────────────────
+  const branchRows = [...branchComparisons]
+    .filter(b => b.hasSales)
+    .sort((a,b) => b.change - a.change)  // worsened first
+    .map(b => {
+      const tArr = b.trend==='improved'?'↑':b.trend==='worsened'?'↓':'→';
+      const tCls = `tcr-${b.trend}`;
+      const chgSign = b.change > 0 ? '+' : '';
+      return `<div class="trend-cmp-row">
+        <div class="tcr-name">${b.name}</div>
+        <div style="color:${b.todayDiff<-0.009?'var(--red)':b.todayDiff>0.009?'var(--blue)':'var(--green)'};font-weight:700">${money(b.todayDiff,true)}</div>
+        <div style="color:var(--muted);font-size:11px">${money(b.yesterdayDiff,true)}</div>
+        <div class="${tCls}" style="font-weight:700">${tArr} ${chgSign}${fmt(b.change)}</div>
+        <div><span class="tcr-badge ${b.todayStatus}">${b.todayStatus==='matched'?'✅ مطابق':b.todayStatus==='deficit'?'🔴 عجز':b.todayStatus==='surplus'?'🔵 فائض':'⚪ لا بيانات'}</span></div>
+        <div><span class="${tCls}" style="font-size:11px;font-weight:700">${b.trend==='improved'?'✅ تحسّن':b.trend==='worsened'?'⚠️ تراجع':'→ ثابت'}</span></div>
+        <div style="font-size:10px;color:var(--muted)">${b.action}</div>
+      </div>`;
+    }).join('');
+
+  const branchTable = `
+    <div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px">مقارنة الفروع تفصيلياً — مرتّبة من الأعلى تراجعاً</div>
+    <div style="overflow-x:auto">
+      <div class="trend-cmp-hdr"><div>الفرع</div><div>فرق اليوم</div><div>فرق الأمس</div><div>التغير</div><div>الحالة</div><div>الاتجاه</div><div>الإجراء</div></div>
+      ${branchRows || '<div style="padding:14px;color:var(--muted);text-align:center">لا توجد بيانات</div>'}
+    </div>`;
+
+  // ── 3. Top Improved / Top Worsened ───────────────────────────────
+  const top3 = (arr, title, cls, icon) => arr.length === 0
+    ? `<div class="top-card ${cls}"><div class="top-card-lbl">${icon} ${title}</div><div style="color:var(--muted);font-size:11px;text-align:center;padding:8px">لا توجد فروع في هذا التصنيف</div></div>`
+    : `<div class="top-card ${cls}"><div class="top-card-lbl">${icon} ${title}</div>
+        ${arr.slice(0,3).map((b,i)=>`<div class="top-card-item">
+          <strong>${i+1}. ${b.name}</strong>
+          <span class="tcr-${cls}">${cls==='improved'?'-':'+'} ${money(Math.abs(b.change))}</span>
+        </div>`).join('')}
+       </div>`;
+
+  const topSection = `
+    <div class="top-row">
+      ${top3(improvedSorted, 'أكثر الفروع تحسناً', 'improved', '✅')}
+      ${top3(worsenedSorted, 'أكثر الفروع تراجعاً', 'worsened', '⚠️')}
+    </div>`;
+
+  // ── 4. MTD Stats ─────────────────────────────────────────────────
+  const mtd = mtdStats;
+  const mtdSection = `
+    <div style="font-size:11px;color:var(--gold);font-weight:700;margin:16px 0 8px">📅 ملخص الشهر حتى الآن (MTD)</div>
+    <div class="mtd-grid">
+      <div class="mtd-card">
+        <div class="mtd-lbl">إجمالي الأيام</div>
+        <div class="mtd-val" style="color:var(--blue)">${mtd.totalDays}</div>
+      </div>
+      <div class="mtd-card" style="border-color:rgba(16,185,129,.3)">
+        <div class="mtd-lbl">أيام مطابقة تامة</div>
+        <div class="mtd-val" style="color:var(--green)">${mtd.perfectDays}</div>
+      </div>
+      <div class="mtd-card" style="border-color:rgba(239,68,68,.3)">
+        <div class="mtd-lbl">أيام بها فروقات</div>
+        <div class="mtd-val" style="color:var(--red)">${mtd.varianceDays}</div>
+      </div>
+      <div class="mtd-card">
+        <div class="mtd-lbl">أفضل يوم</div>
+        <div class="mtd-val" style="color:var(--green);font-size:13px">${dateToAr(bestDay.key)}</div>
+        <div class="mtd-lbl">${bestDay.m.issueCount} فروقات</div>
+      </div>
+      <div class="mtd-card">
+        <div class="mtd-lbl">أسوأ يوم</div>
+        <div class="mtd-val" style="color:var(--red);font-size:13px">${dateToAr(worstDay.key)}</div>
+        <div class="mtd-lbl">${worstDay.m.issueCount} فروقات</div>
+      </div>
+    </div>`;
+
+  // ── 5. Charts ─────────────────────────────────────────────────────
+  const chartsSection = `
+    <div class="trend-chart-grid">
+      <div class="card chart-card"><div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px">صافي الفرق عبر الأيام</div>
+        <div id="trendLineChart"><div class="chart-ph"><span>📈</span>جاري التحميل...</div></div></div>
+      <div class="card chart-card"><div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px">فروع بها فروقات عبر الأيام</div>
+        <div id="trendBarChart"><div class="chart-ph"><span>📊</span>جاري التحميل...</div></div></div>
+    </div>`;
+
+  el.innerHTML = `
+    <div class="sec-ttl">📈 Trend — مقارنة الأيام</div>
+    <div class="card" style="padding:18px 20px">
+      ${summaryKPIs}
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:2px">
+        ${branchTable}
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:14px">
+        ${topSection}
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">
+        ${mtdSection}
+      </div>
+    </div>
+    ${chartsSection}`;
+
+  // Initialize trend charts
+  setTimeout(() => initTrendCharts(allDays), 80);
+}
+
+function initTrendCharts(allDays) {
+  if (window._chartFail || typeof Chart === 'undefined') {
+    // Fallback table
+    ['trendLineChart','trendBarChart'].forEach(id => {
+      const d = allDays.map(day => `<tr><td>${dateToAr(day.key)}</td><td style="color:${day.m.netDiff>=0?'var(--blue)':'var(--red)'}">${money(day.m.netDiff,true)}</td><td>${day.m.issueCount}</td></tr>`).join('');
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = `<table><thead><tr><th>اليوم</th><th>صافي الفرق</th><th>فروقات</th></tr></thead><tbody>${d}</tbody></table>`;
+    });
+    return;
+  }
+  const labels   = allDays.map(d => dateToAr(d.key));
+  const netDiffs = allDays.map(d => d.m.netDiff);
+  const issueCts = allDays.map(d => d.m.issueCount);
+  const MOPTS = {plugins:{legend:{labels:{color:'#8899aa',font:{size:10,family:'Cairo'}}}},
+                  scales:{x:{ticks:{color:'#8899aa',font:{size:9}}},y:{ticks:{color:'#8899aa'}}},responsive:true};
+
+  const mkCanvas = (id) => {
+    const el = document.getElementById(id); if(!el) return null;
+    el.innerHTML=''; const cv = document.createElement('canvas'); el.appendChild(cv); return cv;
+  };
+  try {
+    const c1 = mkCanvas('trendLineChart'); if(c1) {
+      if(window._tc1)window._tc1.destroy();
+      window._tc1 = new Chart(c1,{type:'line',data:{labels,datasets:[{
+        label:'صافي الفرق',data:netDiffs,
+        borderColor:netDiffs[netDiffs.length-1]>=0?'rgba(59,130,246,.9)':'rgba(239,68,68,.9)',
+        backgroundColor:netDiffs[netDiffs.length-1]>=0?'rgba(59,130,246,.1)':'rgba(239,68,68,.1)',
+        fill:true,tension:.4,pointBackgroundColor:netDiffs.map(v=>v>=0?'rgba(59,130,246,.9)':'rgba(239,68,68,.9)'),pointRadius:4
+      }]},options:{...MOPTS}});
+    }
+  } catch(e){}
+  try {
+    const c2 = mkCanvas('trendBarChart'); if(c2) {
+      if(window._tc2)window._tc2.destroy();
+      window._tc2 = new Chart(c2,{type:'bar',data:{labels,datasets:[{
+        label:'فروع بها فروقات',data:issueCts,
+        backgroundColor:issueCts.map(v=>v===0?'rgba(16,185,129,.7)':'rgba(239,68,68,.7)'),borderRadius:4
+      }]},options:{...MOPTS,plugins:{...MOPTS.plugins,legend:{display:false}}}});
+    }
+  } catch(e){}
+}
+
+/* ═══ ACTION PLAN ═══ */
+function renderActionPlan(metrics, branches, dq) {
+  const actions = [];
+  const pcls = ['p1','p2','p3','p4','p5'];
+
+  if (metrics.biggest) {
+    const br = computeBranchRisk(metrics.biggest);
+    actions.push({n:1,owner:cleanBranch(metrics.biggest.name),
+      issue:`${metrics.biggest.netDiff<0?'عجز':'فائض'} ${money(metrics.biggest.netDiff,true)} (${pct(br.pct)})`,
+      action:br.action, deadline:'اليوم'});
+  }
+  if (metrics.issueBrs.length > (metrics.biggest?1:0)) {
+    const rest = metrics.issueBrs.filter(b=>b!==metrics.biggest);
+    actions.push({n:actions.length+1, owner:rest.slice(0,3).map(b=>cleanBranch(b.name)).join('، '),
+      issue:`${rest.length} فروع بها فروقات`, action:'مراجعة التسوية مع المحاسب المسؤول', deadline:'اليوم'});
+  }
+  if (metrics.matchedCount > 0) {
+    actions.push({n:actions.length+1, owner:'الإدارة / المحاسبة',
+      issue:`${metrics.matchedCount} فروع مطابقة`,
+      action:'اعتماد التسوية وإغلاق اليوم للفروع المطابقة', deadline:'اليوم'});
+  }
+  if (dq.issues.find(i=>i.lbl.includes('بدون بيانات'))) {
+    const nd = dq.issues.find(i=>i.lbl.includes('بدون بيانات'));
+    actions.push({n:actions.length+1, owner:nd.detail||'مسؤول الإدخال',
+      issue:`${nd.count} فروع بدون بيانات`, action:'مراجعة سبب غياب البيانات وإدخالها يدوياً', deadline:'خلال 24 ساعة'});
+  }
+  actions.push({n:actions.length+1, owner:'مسؤول التقارير',
+    issue:'إرسال تقرير يومي',
+    action:'إرسال ملخص التسوية عبر واتساب للإدارة', deadline:'نهاية اليوم'});
+
+  const rows = actions.slice(0,5).map((a,i)=>`
+    <tr>
+      <td><span class="pri-dot ${pcls[i]}">${a.n}</span></td>
+      <td><strong>${a.owner}</strong></td>
+      <td style="color:var(--muted)">${a.issue}</td>
+      <td><span class="badge b-org">${a.action}</span></td>
+      <td style="color:var(--muted);white-space:nowrap">${a.deadline}</td>
+    </tr>`).join('');
+
+  document.getElementById('sec-action').innerHTML = `
+    <div class="sec-ttl">🎯 Action Plan — الإجراءات التنفيذية اليوم</div>
+    <div class="card action-card">
+      <table>
+        <thead><tr><th>#</th><th>المسؤول / الفرع</th><th>المشكلة</th><th>الإجراء المطلوب</th><th>الموعد</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+/* ═══ DATA QUALITY ═══ */
+function renderDataQuality(dq) {
+  const allItems = [...dq.issues, ...dq.okItems];
+  const cards = allItems.map(i=>`
+    <div class="dq-item ${i.cls}">
+      <div class="dq-lbl">${i.lbl}</div>
+      ${i.cls==='issue'
+        ? `<div class="dq-count issue">${i.count}</div>
+           ${i.detail?`<div style="font-size:10px;color:var(--red);margin-top:3px">${i.detail}</div>`:''}
+           <div class="dq-fix">📌 ${i.fix}</div>`
+        : `<div class="dq-count ok">${i.count||'✅'}</div>`
+      }
+    </div>`).join('');
+
+  document.getElementById('sec-dq').innerHTML = `
+    <div class="sec-ttl">🔍 جودة البيانات — Data Quality</div>
+    <div class="dq-grid">${cards}</div>`;
+}
+
+/* ═══ CHARTS ═══ */
+function renderCharts(branches, days) {
+  document.getElementById('sec-charts').innerHTML = `
+    <div class="sec-ttl">📈 الرسوم البيانية</div>
+    <div class="chart-grid">
+      <div class="card chart-card"><div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px">الفرق حسب الفرع</div><div id="ch1"><div class="chart-ph"><span>📊</span>جاري التحميل...</div></div></div>
+      <div class="card chart-card"><div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px">مطابق مقابل فروقات</div><div id="ch2"><div class="chart-ph"><span>📊</span>جاري التحميل...</div></div></div>
+      <div class="card chart-card"><div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px">صافي الفرق اليومي</div><div id="ch3"><div class="chart-ph"><span>📈</span>جاري التحميل...</div></div></div>
+      <div class="card chart-card"><div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:8px">عجز وفائض حسب الفرع</div><div id="ch4"><div class="chart-ph"><span>📊</span>جاري التحميل...</div></div></div>
+    </div>`;
+  setTimeout(() => initCharts(branches, days), 80);
+}
+
+function initCharts(branches, days) {
+  if (window._chartFail || typeof Chart === 'undefined') {
+    ['ch1','ch2','ch3','ch4'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="chart-ph"><span>⚠️</span><p>Chart.js غير متاح</p></div>';
+    });
+    return;
+  }
+  const withData = branches.filter(b => b.sales);
+  const labels   = withData.map(b => cleanBranch(b.name));
+  const diffs    = withData.map(b => b.netDiff);
+  const deficits = withData.map(b => Math.abs(b.deficit));
+  const surpluses= withData.map(b => b.surplus);
+  const clr = diffs.map(v => v < -0.009 ? 'rgba(239,68,68,.8)' : v > 0.009 ? 'rgba(59,130,246,.8)' : 'rgba(16,185,129,.8)');
+  const OPTS = {plugins:{legend:{labels:{color:'#8899aa',font:{size:11,family:'Cairo'}}}},scales:{x:{ticks:{color:'#8899aa'}},y:{ticks:{color:'#8899aa'}}},responsive:true};
+
+  const mkCanvas = (id) => { const el = document.getElementById(id); el.innerHTML=''; const c = document.createElement('canvas'); el.appendChild(c); return c; };
+
+  // Chart 1: Variance bar
+  try { const c = mkCanvas('ch1'); if(charts.c1)charts.c1.destroy();
+    charts.c1 = new Chart(c, {type:'bar', data:{labels, datasets:[{label:'الفرق',data:diffs,backgroundColor:clr,borderRadius:5}]},
+    options:{...OPTS, indexAxis:'y', plugins:{legend:{display:false}}}}); } catch(e){}
+
+  // Chart 2: Doughnut
+  try { const c = mkCanvas('ch2'); if(charts.c2)charts.c2.destroy();
+    const matched = withData.filter(b=>Math.abs(b.netDiff)<=0.009).length;
+    const issues  = withData.length - matched;
+    charts.c2 = new Chart(c, {type:'doughnut', data:{labels:['مطابق','فروقات'],datasets:[{data:[matched,issues],backgroundColor:['rgba(16,185,129,.8)','rgba(239,68,68,.8)'],borderWidth:2,borderColor:'#0f1620'}]},
+    options:{...OPTS,cutout:'65%'}}); } catch(e){}
+
+  // Chart 3: Line (daily trend)
+  try { const c = mkCanvas('ch3'); if(charts.c3)charts.c3.destroy();
+    if (days && days.length >= 2) {
+      const srt = [...days].sort((a,b)=>a.dateKey.localeCompare(b.dateKey));
+      charts.c3 = new Chart(c, {type:'line', data:{labels:srt.map(d=>dateToAr(d.dateKey)), datasets:[
+        {label:'صافي الفرق',data:srt.map(d=>d.totals?.netDiff||0),borderColor:'var(--gold)',backgroundColor:'rgba(212,168,32,.1)',fill:true,tension:.4}]},
+      options:{...OPTS}}); 
+    } else { document.getElementById('ch3').innerHTML = '<div class="chart-ph"><span>📅</span><p>يجب وجود يومين على الأقل</p></div>'; }
+  } catch(e){}
+
+  // Chart 4: Deficit + Surplus grouped
+  try { const c = mkCanvas('ch4'); if(charts.c4)charts.c4.destroy();
+    charts.c4 = new Chart(c, {type:'bar', data:{labels, datasets:[
+      {label:'عجز',data:deficits,backgroundColor:'rgba(239,68,68,.7)',borderRadius:4},
+      {label:'فائض',data:surpluses,backgroundColor:'rgba(59,130,246,.7)',borderRadius:4}]},
+    options:{...OPTS}}); } catch(e){}
+}
+
+/* ═══ WHATSAPP (3 TYPES) ═══ */
+function renderWhatsApp(metrics, branches, mo, dayObj, trend, isPeriod, pFrom, pTo) {
+  const date   = dayObj ? dateToAr(dayObj.dateKey) : (mo.monthName||'');
+  const issues = metrics.sorted;
+
+  // ── CEO Message (period mode or normal) ──────────────────
+  const ceoHeader = isPeriod
+    ? `📊 تقرير التسوية النقدية للفترة\n📅 من ${pFrom} إلى ${pTo}\n${'━'.repeat(24)}\n`
+    : `📊 تقرير التسوية النقدية — CEO\n🗓 ${date}\n${'━'.repeat(24)}\n`;
+  const ceoMsg =
+    ceoHeader +
+    `📦 إجمالي الفروع: ${metrics.totalBranches}\n` +
+    `✅ فروع مطابقة: ${metrics.matchedCount} (${metrics.compliance.toFixed(0)}%)\n` +
+    `⚠️ فروع بها فروقات: ${metrics.issueCount}\n${'━'.repeat(24)}\n` +
+    `💰 إجمالي المبيعات: ${money(metrics.totSales)}\n` +
+    `💵 إجمالي النقدية: ${money(metrics.totCash)}\n` +
+    `📉 إجمالي العجز: ${money(metrics.totDeficit,true)}\n` +
+    `📈 إجمالي الفائض: ${money(metrics.totSurplus,true)}\n` +
+    `🔄 صافي الفرق: ${money(metrics.netDiff,true)}\n${'━'.repeat(24)}\n` +
+    (metrics.biggest ? `🚨 أعلى فرق: ${cleanBranch(metrics.biggest.name)} (${money(metrics.biggest.netDiff,true)})\n` : '') +
+    `⚡ الإجراء: ${metrics.issueCount?'مراجعة الفروع بها فروقات اليوم':'اعتماد التسوية — جميع الفروع مطابقة'}` +
+    (trend ? `\n${'━'.repeat(24)}\n` +
+     `📈 الاتجاه: ${trend.direction==='Improving'?'✅ تحسّن':trend.direction==='Worsening'?'⚠️ تراجع':'→ ثابت'}\n` +
+     `🔢 اليوم/الأمس: ${trend.today.issueCount} مقابل ${trend.yesterday.issueCount} فرع بها فروقات\n` +
+     (trend.bestImproved  ? `✅ أفضل تحسن: ${trend.bestImproved.name}\n`  : '') +
+     (trend.worstWorsened ? `⚠️ أكبر تراجع: ${trend.worstWorsened.name}\n` : '') : '');
+
+  // Branch Manager Messages
+  const branchMsgs = issues.length
+    ? issues.map(b => `📌 مراجعة تسوية نقدية — ${cleanBranch(b.name)}\n🗓 ${date}\n${'━'.repeat(22)}\n💰 المبيعات: ${money(b.sales)}\n💵 النقدية: ${money(b.cash)}\n${b.netDiff<0?'📉 عجز':'📈 فائض'}: ${money(b.netDiff,true)}\n🔶 الإجراء: ${computeBranchRisk(b).action}`).join('\n\n' + '─'.repeat(28) + '\n\n')
+    : 'لا توجد فروع بها فروقات ✅';
+
+  // Accounting Message
+  const accMsg =
+    `📋 ملخص تسوية الفروع — المحاسبة\n🗓 ${date}\n${'━'.repeat(24)}\n` +
+    (issues.length ? `⚠️ فروع تحتاج مراجعة:\n${issues.map(b=>`• ${cleanBranch(b.name)}: ${money(b.netDiff,true)} (${b.netDiff<0?'عجز':'فائض'})`).join('\n')}\n${'━'.repeat(24)}\n` : '') +
+    `✅ فروع معتمدة:\n${metrics.matched.map(b=>`• ${cleanBranch(b.name)}: مطابق`).join('\n')}\n${'━'.repeat(24)}\n` +
+    `📉 إجمالي العجز: ${money(metrics.totDeficit,true)}\n📈 إجمالي الفائض: ${money(metrics.totSurplus,true)}\n🔄 صافي: ${money(metrics.netDiff,true)}\n${'━'.repeat(24)}\n` +
+    `📌 المطلوب: ${issues.length?'إقفال الفروع بها فروقات + اعتماد المطابقة':'اعتماد جميع الفروع'}`;
+
+  document.getElementById('sec-wa').innerHTML = `
+    <div class="sec-ttl">💬 رسائل واتساب</div>
+    <div class="wa-tabs">
+      <button class="wa-tab active" onclick="switchWa('ceo',this)">👔 رسالة CEO</button>
+      <button class="wa-tab" onclick="switchWa('branch',this)">🏢 مديري الفروع</button>
+      <button class="wa-tab" onclick="switchWa('acc',this)">🧾 المحاسبة</button>
+    </div>
+    <div id="wa-ceo" class="wa-pane active">
+      <div class="wa-card"><div class="wa-txt" id="waTxtCeo">${ceoMsg}</div>
+      <button class="wa-copy" onclick="copyWA('waTxtCeo')">📋 نسخ رسالة CEO</button></div>
+    </div>
+    <div id="wa-branch" class="wa-pane">
+      <div class="wa-card"><div class="wa-txt" id="waTxtBranch">${branchMsgs}</div>
+      <button class="wa-copy" onclick="copyWA('waTxtBranch')">📋 نسخ رسائل الفروع</button></div>
+    </div>
+    <div id="wa-acc" class="wa-pane">
+      <div class="wa-card"><div class="wa-txt" id="waTxtAcc">${accMsg}</div>
+      <button class="wa-copy" onclick="copyWA('waTxtAcc')">📋 نسخ رسالة المحاسبة</button></div>
+    </div>`;
+}
+
+/* ═══ ACTIONS ═══ */
+function selectMonth(m) { periodFrom=null; periodTo=null; selectedMonth = m; const mo = getMonth(); const ad = (mo?.days||[]).filter(d=>d?.branches?.some(b=>b.sales||b.cash||b.netDiff)); selectedDay = ad[ad.length-1]?.dateKey||null; render(); }
+function selectDay(d)   { selectedDay = d; render(); }
+
+function switchWa(pane, btn) {
+  ['ceo','branch','acc'].forEach(p => { const el=document.getElementById('wa-'+p); if(el)el.classList.toggle('active',p===pane); });
+  btn.closest('.wa-tabs').querySelectorAll('.wa-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function copyWA(id) {
+  const el = document.getElementById(id); if(!el)return;
+  navigator.clipboard.writeText(el.textContent).then(()=>{alert('تم نسخ الرسالة ✅')});
+}
+function copyCEOReport() {
+  const el = document.getElementById('waTxtCeo');
+  if (el) navigator.clipboard.writeText(el.textContent).then(()=>alert('تم نسخ تقرير CEO ✅'));
+}
+function goTo(id) {
+  const el = document.getElementById(id); if(!el)return;
+  const top = el.getBoundingClientRect().top + window.pageYOffset - 130;
+  window.scrollTo({top:Math.max(0,top), behavior:'smooth'});
+}
+
+/* ═══ INIT ═══ */
+window.addEventListener('load', loadData);
+</script>
+
+<div id="toastContainer" class="toast-container"></div>
+
+</body>
+</html>
