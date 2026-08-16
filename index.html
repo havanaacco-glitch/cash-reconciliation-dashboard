@@ -1586,27 +1586,33 @@ function renderWhatsApp(metrics, branches, mo, dayObj, trend, isPeriod, pFrom, p
   const issues = metrics.sorted;
 
   // ── CEO Message (period mode or normal) ──────────────────
-  const ceoHeader = isPeriod
-    ? `📊 تقرير التسوية النقدية للفترة\n📅 من ${pFrom} إلى ${pTo}\n${'━'.repeat(24)}\n`
-    : `📊 تقرير التسوية النقدية — CEO\n🗓 ${date}\n${'━'.repeat(24)}\n`;
+  const issueBranchesList = issues.length
+    ? issues.map((b, i) =>
+        `${i + 1}️⃣ ${cleanBranch(b.name)}: ${money(b.netDiff, true)}`
+      ).join('\n')
+    : '✅ لا توجد فروع بها فروقات';
+
   const ceoMsg =
     ceoHeader +
-    `📦 إجمالي الفروع: ${metrics.totalBranches}\n` +
-    `✅ فروع مطابقة: ${metrics.matchedCount} (${metrics.compliance.toFixed(0)}%)\n` +
-    `⚠️ فروع بها فروقات: ${metrics.issueCount}\n${'━'.repeat(24)}\n` +
-    `💰 إجمالي المبيعات: ${money(metrics.totSales)}\n` +
-    `💵 إجمالي النقدية: ${money(metrics.totCash)}\n` +
-    `📉 إجمالي العجز: ${money(metrics.totDeficit,true)}\n` +
-    `📈 إجمالي الفائض: ${money(metrics.totSurplus,true)}\n` +
-    `🔄 صافي الفرق: ${money(metrics.netDiff,true)}\n${'━'.repeat(24)}\n` +
-    (metrics.biggest ? `🚨 أعلى فرق: ${cleanBranch(metrics.biggest.name)} (${money(metrics.biggest.netDiff,true)})\n` : '') +
-    `⚡ الإجراء: ${metrics.issueCount?'مراجعة الفروع بها فروقات اليوم':'اعتماد التسوية — جميع الفروع مطابقة'}` +
-    (trend ? `\n${'━'.repeat(24)}\n` +
-     `📈 الاتجاه: ${trend.direction==='Improving'?'✅ تحسّن':trend.direction==='Worsening'?'⚠️ تراجع':'→ ثابت'}\n` +
-     `🔢 اليوم/الأمس: ${trend.today.issueCount} مقابل ${trend.yesterday.issueCount} فرع بها فروقات\n` +
-     (trend.bestImproved  ? `✅ أفضل تحسن: ${trend.bestImproved.name}\n`  : '') +
-     (trend.worstWorsened ? `⚠️ أكبر تراجع: ${trend.worstWorsened.name}\n` : '') : '');
-
+    `✅ نسبة المطابقة: ${metrics.compliance.toFixed(0)}%\n` +
+    `📦 الفروع المطابقة: ${metrics.matchedCount} من ${metrics.totalBranches} فروع\n` +
+    `⚠️ الفروع التي بها فروقات: ${metrics.issueCount} فروع\n${'━'.repeat(24)}\n` +
+    `📉 إجمالي العجز: ${money(metrics.totDeficit, true)}\n` +
+    `📈 إجمالي الزيادة: ${money(metrics.totSurplus, true)}\n` +
+    `🔄 صافي الفرق: ${money(metrics.netDiff, true)}\n${'━'.repeat(24)}\n` +
+    `🏬 الفروع التي بها فروقات:\n${issueBranchesList}\n${'━'.repeat(24)}\n` +
+    (metrics.biggest ? `🚨 أعلى فرق: ${cleanBranch(metrics.biggest.name)} (${money(metrics.biggest.netDiff, true)})\n` : '') +
+    `📈 الاتجاه: ${
+      trend.direction === 'Improving'
+        ? '✅ تحسن في مستوى المطابقة'
+        : trend.direction === 'Worsening'
+          ? '⚠️ تراجع في مستوى المطابقة'
+          : 'ثابت'
+    }\n` +
+`🔢 مقارنة بالأمس: ${trend.today.issueCount} فروع بها فروقات مقابل ${trend.yesterday.issueCount} بالأمس\n` +    (trend.bestImproved ? `✅ أفضل تحسن: ${trend.bestImproved.name}\n` : '') +
+    (trend.worstWorsened ? `⚠️ أكبر تراجع: ${trend.worstWorsened.name}\n` : '') +
+    `${'━'.repeat(24)}\n` +
+    `⚡ الإجراء المطلوب: مراجعة الفروع التي بها فروقات خلال اليوم، مع التركيز أولًا على الفرع الأعلى تأثيرًا.`;
   // Branch Manager Messages
   const branchMsgs = issues.length
     ? issues.map(b => `📌 مراجعة تسوية نقدية — ${cleanBranch(b.name)}\n🗓 ${date}\n${'━'.repeat(22)}\n💰 المبيعات: ${money(b.sales)}\n💵 النقدية: ${money(b.cash)}\n${b.netDiff<0?'📉 عجز':'📈 فائض'}: ${money(b.netDiff,true)}\n🔶 الإجراء: ${computeBranchRisk(b).action}`).join('\n\n' + '─'.repeat(28) + '\n\n')
