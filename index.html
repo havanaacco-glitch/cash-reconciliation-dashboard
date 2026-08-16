@@ -1586,16 +1586,20 @@ function renderWhatsApp(metrics, branches, mo, dayObj, trend, isPeriod, pFrom, p
   const issues = metrics.sorted;
 
   // ── CEO Message (period mode or normal) ──────────────────
-  const issueBranchesList = issues.length
-    ? issues.map((b, i) =>
-        `${i + 1}️⃣ ${cleanBranch(b.name)}: ${money(b.netDiff, true)}`
-      ).join('\n')
-    : '✅ لا توجد فروع بها فروقات';
+// — CEO Message (period mode or normal)
+const ceoHeader = isPeriod
+  ? `📊 تقرير التسوية النقدية للفترة\n🗓 من ${pFrom} إلى ${pTo}\n${'━'.repeat(24)}\n`
+  : `📊 تقرير التسوية النقدية — CEO\n🗓 ${date}\n${'━'.repeat(24)}\n`;
 
-  const ceoMsg =
-    ceoHeader +
-    `✅ نسبة المطابقة: ${metrics.compliance.toFixed(0)}%\n` +
-    `📦 الفروع المطابقة: ${metrics.matchedCount} من ${metrics.totalBranches} فروع\n` +
+const issueBranchesList = issues.length
+  ? issues.map((b, i) =>
+      `${i + 1}️⃣ ${cleanBranch(b.name)}: ${money(b.netDiff, true)}`
+    ).join('\n')
+  : '✅ لا توجد فروع بها فروقات';
+
+const ceoMsg =
+  ceoHeader +
+  `✅ نسبة المطابقة: ${metrics.compliance.toFixed(0)}%\n` +    `📦 الفروع المطابقة: ${metrics.matchedCount} من ${metrics.totalBranches} فروع\n` +
     `⚠️ الفروع التي بها فروقات: ${metrics.issueCount} فروع\n${'━'.repeat(24)}\n` +
     `📉 إجمالي العجز: ${money(metrics.totDeficit, true)}\n` +
     `📈 إجمالي الزيادة: ${money(metrics.totSurplus, true)}\n` +
