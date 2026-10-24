@@ -1305,8 +1305,13 @@ function renderTabs(mo, actualDays, periodLabel) {
 
   const months = appData?.months || [];
   // Hide the four invalid week-like labels from navigation; keep source data intact.
-  const hiddenMonthLabels = new Set(['2026 21', '2026 22', '2026 23', '2026 24']);
-  monthTabsEl.innerHTML = months.filter(x => !hiddenMonthLabels.has(String(x.monthName || '').trim().replace(/\s+/g, ' '))).map(x => {
+  const isInvalidWeekTab = name => {
+    const label = String(name || '').replace(/[\u200e\u200f\u061c]/g, '').trim();
+    const numbers = label.match(/\d+/g) || [];
+    // Matches either RTL/LTR order: 2026 21, 21 2026, through week 24.
+    return numbers.length === 2 && numbers.includes('2026') && numbers.some(n => /^(21|22|23|24)$/.test(n));
+  };
+  monthTabsEl.innerHTML = months.filter(x => !isInvalidWeekTab(x.monthName)).map(x => {
     const isCurrent = isCurrentMonth(x.monthName);
     const isActive  = x.monthName === selectedMonth && !inPeriod;
     const isLive    = x.isLive;
