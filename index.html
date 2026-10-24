@@ -743,7 +743,11 @@ function processData(sheetsJSON) {
   const live = parseBranchJSON(sheetsJSON, summary.months.map(m => m.monthName));
 
   // دمج كل الشهور (ملخص + مستخرج من أوراق الفروع) ثم ترتيبها تصاعديًا حسب المفتاح الفعلي
-  const allMonths = [...summary.months, ...live];
+  // Only real calendar months are reportable (01-12). Some sheet date values
+  // were parsed as 2026-21 ... 2026-24, creating empty phantom month tabs.
+  // Filter these display records without editing the underlying Sheets data.
+  const allMonths = [...summary.months, ...live]
+    .filter(m => /^\d{4}-(0[1-9]|1[0-2])$/.test(m.monthKey || ''));
   allMonths.sort((a,b) => (a.monthKey || '').localeCompare(b.monthKey || ''));
 
   appData = { kpis: summary.kpis, months: allMonths };
